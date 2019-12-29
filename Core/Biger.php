@@ -23,6 +23,7 @@ require_once KSAOS.'/Core/Workerman/Autoloader.php';
 
 class Biger{
 	const _name = 'KSAOS框架';
+	protected $name = '';
 	protected $debug = 1; //是否开启日志输出
 
 	protected $socket = '';
@@ -59,7 +60,7 @@ class Biger{
 		$this->_Worker = new \Workerman\Worker($this->socket);
 		$Worker = $this->_Worker;
 		if(!is_null($this->id)){ $Worker->id = $this->id; }
-		$Worker->name = self::_name;
+		$Worker->name = $this->name ? $this->name.'(KSAOS)' : self::_name ;
 		if(!is_null($this->count)){ $Worker->count = $this->count; }
 		if(!is_null($this->protocol)){ $Worker->protocol = $this->protocol; }
 		if(!is_null($this->transport)){ $Worker->transport = $this->transport; }
