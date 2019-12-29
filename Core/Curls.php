@@ -76,16 +76,57 @@ class Curls{
 	
 	/**
 	 * 多线程CURL
-	 * @param type $URLS 地址数组
-	 * @param type $post POST数据（对应$URLS顺序的数据）
-	 * @param string $header 请求头数组（对应$URLS顺序的数据）
-	 * @param type $timeout 建立连接后的超时时间 秒
-	 * @param string $resolve 域名指定IP、端口的设置 每个元素以冒号分隔。格式： array("example.com:80:127.0.0.1")
-	 * @param string $setoptDataAppend 附加的setopt参数（对应$URLS顺序的数据）
-	 * @return type
+	 * @param array $URLS 地址数组 注意下方说明
+	 * 纯URL模式
+	 * ['url-1','url-2','url-3' ... ]
+	 * 
+	 * 组合模式
+	 * [
+	 *	[
+	 *		'url' => 'http://xxx', //请求地址
+	 *		'post' => [], //需要post的数据 数组或者string
+	 *		'header' => [], //需要发送的header 必须数组 ['token'=>'xxx', 'timestamp'=>1234]
+	 *		'ip' => '192.168.0.1', //请求地址需要指定的IP地址
+	 *	],
+	 * ]
+	 * 
+	 * @param array/string $post 所有url的POST数据（$URLS组合模式中未指定post的所有url都继承该值 如不需要，必须给定一个空值）
+	 * @param array $header 所有url的请求头数组（$URLS组合模式中未指定header的所有url都继承该值 如不需要，必须给定一个空值）
+	 * @param int $timeout 建立连接后的超时时间 秒
+	 * @param array $resolve 所有url的域名指定IP、端口的设置 每个元素以冒号分隔。格式： array('xxx' => 'xxx')
+	 * @param array $setoptDataAppend 所有url的附加setopt参数
+	 * @return array
 	 */
 	public static function sends($URLS=[], $post=[], $header=[], $timeout=15, $resolve=[], $setoptDataAppend=[]){
 		APP::hook(__CLASS__ , __FUNCTION__);
+		//整理数据
+		$Sends = [];
+		$i = 0;
+		foreach($URLS as $key => $value){
+			//如果单传一条URL过来 则初始化value变量为数组
+			if(is_string($value)){
+				$value = ['url' => $value];
+			}
+			$value['post'] = isset($value['post']) ? $value['post'] : $post;
+			$value['header'] = isset($value['header']) ? $value['header'] : $header;
+			$value['resolve'] = isset($value['resolve']) ? $value['resolve'] : $resolve;
+			if(isset($value['ip'])){
+				$u = parse_url($value['url']);
+				$value['resolve'][$u['host']] = $value['ip'];
+			}
+			if(is_array($value['header'])){
+				foreach($value['header'] as $k => $v){
+					$value['header'][$k] = $k.': '.$v;
+				}
+			}
+			$Sends[$i] = [
+				'url' => $value['url'],
+				'post' => $value['post'],
+				'header' => $value['header'],
+				'resolve' => $value['resolve'],
+			];
+			$i ++;
+		}
 		$setoptData = [
 			CURLOPT_SSL_VERIFYPEER => false,
 			CURLOPT_SSL_VERIFYHOST => false,
@@ -96,74 +137,78 @@ class Curls{
 			CURLOPT_TIMEOUT => $timeout, //文件下载时间 超过直接断开
 		];
 		if($setoptDataAppend){
-			foreach($setoptDataAppend as $i => $value){
-				foreach($value as $key => $val){
-					$setoptDataAppend[$i][$key] = $key.': '.$val;
-				}
+			foreach($setoptDataAppend as $key => $value){
+					$setoptData[$key] = $key.': '.$value;
 			}
 		}
-		if($header){
-			foreach($header as $i => $value){
-				foreach($value as $key => $val){
-					$header[$i][$key] = $key.': '.$val;
-				}
-			}
-		}
-		if($resolve){
-			foreach($resolve as $key => $value){
-				$resolve[$key] = $key.': '.$val;
-			}
-		}
-
 		$mh = curl_multi_init();
 		$CH = [];
-		foreach ($URLS as $i => $url) {
+		$startTime = [];
+		foreach ($Sends as $i => $value) {
 			$startTime[$i] = microtime(true);
 			$setopt = $setoptData;
-			$setopt[CURLOPT_URL] = $url;
-			if($header[$i]){
-				$setopt[CURLOPT_HTTPHEADER] = $header[$i];
+			$setopt[CURLOPT_URL] = $value['url'];
+			if($value['header']){
+				$setopt[CURLOPT_HTTPHEADER] = $value['header'];
 			}
-			if($resolve){
-				$setopt[CURLOPT_RESOLVE] = $resolve;
+			if($value['resolve']){
+				$setopt[CURLOPT_RESOLVE] = $value['resolve'];
 			}
-			if($post) {
+			if($value['post']) {
 				$setopt[CURLOPT_POST] = 1;
-				$setopt[CURLOPT_POSTFIELDS] = $post;
+				$setopt[CURLOPT_POSTFIELDS] = $value['post'];
 			}
 			$CH[$i]=curl_init();
 			 curl_setopt_array($CH[$i],$setopt);
 			 curl_multi_add_handle($mh,$CH[$i]);
 		}
-
+		$active = NULL;
 		do{
-				$mrc = curl_multi_exec($mh,$active);
+			$mrc = curl_multi_exec($mh,$active);
 		}while($mrc == CURLM_CALL_MULTI_PERFORM);
 
-		while ($active and $mrc == CURLM_OK) {
-				if (curl_multi_select($mh) != -1) {
-						do {
-								$mrc = curl_multi_exec($mh, $active);
-						} while ($mrc == CURLM_CALL_MULTI_PERFORM);
-				}
+		while ($active && $mrc == CURLM_OK) {
+			if (curl_multi_select($mh) != -1) {
+				do {
+					$mrc = curl_multi_exec($mh, $active);
+				} while ($mrc == CURLM_CALL_MULTI_PERFORM);
+			}
 		}
-		$Request = [];
+		//通过curl_multi_info_read 卡住进程，等待请求完成 获取已完成线程的结果
+		while($done = curl_multi_info_read($mh)) {}
+		
 		$Info = [];
 		$Error = [];
-		foreach ($URLS as $i => $url) {
+		$i =0;
+		foreach ($URLS as $key => $value) {
 			$errno = curl_errno($CH[$i]);
 			$info = curl_getinfo($CH[$i]);
 			$body = curl_multi_getcontent($CH[$i]);
-			$Request[$i] =[
-				'httpcode' => $info['http_code'],
-				'error' => $errno,
-				'data' => (string)substr($body, $info['header_size'])
-			];
+			curl_multi_remove_handle($mh, $CH[$i]);
 			curl_close($CH[$i]);
-			$endTime = microtime(true);
-			APP::debug('CURL',['url'=>$url, 'queryTime'=>round(($endTime - $startTime[$i]) ,5),'data'=>$Request[$i]['data'],'post'=>$post[$i],'header'=>$header[$i],'status'=>$info]);
-			unset($errno,$info,$body);
+			if(isset($value['header'])){
+				unset($value['header']);
+			}
+			if(isset($value['post'])){
+				unset($value['post']);
+			}
+			if(isset($value['resolve'])){
+				unset($value['resolve']);
+			}
+			
+			$value['url'] = $value['url'];
+			$value['httpcode'] = $info['http_code'];
+			$value['error'] = $errno;
+			$value['data'] = (string)substr($body, $info['header_size']);
+			$URLS[$key] = $value;
+			
+			APP::debug('CURL',['url'=>$value['url'], 'queryTime'=>round((microtime(true) - $startTime[$i]) ,5),'data'=>$body,'post'=>(isset($Sends[$i]['post']) ? $Sends[$i]['post'] : ''),'header'=>(isset($Sends[$i]['header']) ? $Sends[$i]['header'] : ''),'status'=>$info]);
+			$i ++;
 		}
-		return $Request;
+		unset($errno,$info,$body);
+		curl_multi_close($mh);
+		
+		
+		return $URLS;
 	}
 }
