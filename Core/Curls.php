@@ -132,8 +132,8 @@ class Curls{
 			CURLOPT_SSL_VERIFYHOST => false,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HEADER => 1,
-			CURLOPT_CONNECTTIMEOUT => 1, //握手时间固定1秒 没响应直接断开
+			CURLOPT_HEADER => 3,
+			CURLOPT_CONNECTTIMEOUT => 3, //握手时间固定1秒 没响应直接断开
 			CURLOPT_TIMEOUT => $timeout, //文件下载时间 超过直接断开
 		];
 		if($setoptDataAppend){
