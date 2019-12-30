@@ -19,17 +19,18 @@ class template {
 	private $replacecode = ['search' => [], 'replace' => []];
 	private $file = '';
 
-	public function replace($tplfile='') {
+	public function replace($tplfile='',$tplDir='') {
 		if(!$tplfile){
 			return;
 		}
+		$tplDir = $tplDir ? $tplDir : TPLDIR;
 		$cachedir = 'data/cache/template/';
 		APP::File()->mkdir(ROOT.$cachedir,0777);
 		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer', 'admin/common/header','admin/common/footer'])){
 			$tplfile = $tplfile.'_ajax';
 		}
 		$cachefile = ROOT.$cachedir.str_replace('/','_',$tplfile).'.php';
-		$tplfile = TPLDIR.$tplfile.'.php';
+		$tplfile = $tplDir.$tplfile.'.php';
 		
 		if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在', str_replace(ROOT,'',$tplfile));

@@ -44,12 +44,12 @@ class Loader {
 			$S = explode('\\', $S);
 			foreach($S as $i => $v){
 				$v = strtolower($v);
-				$S[$i] = ucwords($v);
+				$S[$i] = ucfirst($v);
 			}
 			$S = implode('/',$S);
-			$F = ucwords($S).'.php';
+			$F = ucfirst($S).'.php';
 		}else{
-			$F = ucwords(strtolower($class)).'.php';
+			$F = ucfirst(strtolower($class)).'.php';
 		}
 		if(is_file($D.$F)){
 			include_once $D.$F;

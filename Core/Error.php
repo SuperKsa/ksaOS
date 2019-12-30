@@ -99,6 +99,9 @@ class Error {
 	}
 	static function clear($str='') {
 		if(!is_object($str)){
+			if(defined('KSAOS_DB_PRE')){
+				$str = str_replace(KSAOS_DB_PRE, '', $str);
+			}
 			$str = str_replace(['\\',ROOT], ['/',''], $str);
 			$str = htmlspecialchars($str);
 			$str = str_replace(["\t", "\r", "\n"], " ", $str);
@@ -117,15 +120,10 @@ class Error {
 			if(isset($_GET['ajax'])){
 				JSON($Msg,['msg'=>$Msg,'success'=>0,'locationUrl'=>'./']);
 			}
-			if(!function_exists('template')){
-				echo $Msg."\n";
-				print_r($phpmsg);
-				exit;
-			}
 			if($errorCode == '404'){
-				include template('common/404');
+				include APP::Template('Core/tpl/404', KSAOS);
 			}else{
-				include template('common/error');
+				include APP::Template('Core/tpl/_error', KSAOS);
 			}
 		}
 		exit;

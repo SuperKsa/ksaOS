@@ -121,6 +121,7 @@ class Service{
 		$this->config = (array)$config;
 		//项目绝对路径
 		define('PATHS', ROOT.($config['PATHS'] ? $config['PATHS'] : 'App/'));
+		define('KSAOS_DB_PRE', $config['db']['pre'] ? $config['db']['pre'] : '');
 		unset($config);
 		return $this;
 	}
@@ -181,7 +182,7 @@ class Service{
 		}
 		$this->_DB = new DB();
 		$this->_DB->init($this->config['db']);
-		unset($this->config['db']);
+		unset($this->config['db']['server']);
 		$this->hook(__CLASS__ , __FUNCTION__);
 		return $this;
 	}
@@ -394,8 +395,8 @@ class Service{
 			return new Cache();
 		}
 	}
-	public static function template($file){
+	public static function template($file='',$tplDir=''){
 		$Class = new template();
-		return $Class->replace($file);
+		return $Class->replace($file, $tplDir);
 	}
 }
