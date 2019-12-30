@@ -75,7 +75,7 @@ class Biger{
 		$Worker->onWorkerStart = function($worker){
 			echo "\n■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 			echo "■■■■■■■■■■■■■■■■ {$worker->name}启动中 ■■■■■■■■■■■■■■■■\n";
-			echo "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n\n\n";
+			echo "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 			$this->onWorkerStart($worker);
 			if(!$this->debug){
 				$this->TimerAdd(1,function(){
@@ -130,6 +130,20 @@ class Biger{
 		echo '[ksaOS] '.APP::Date()->times().': '.$m."\t内存:{$u}\n";
 	}
 	
+	protected function Error($msg='', $isDebug=false){
+		try {
+			throw new \Exception($msg);
+		} catch (\Exception $e) {
+			$msg = $e->getMessage();
+			echo "\n■■■■■ KSAOS Error ■■■■■\n";
+			echo "时间：".APP::Date()->times()."\n";
+			print_r($msg);
+			echo "\n";
+			echo "■■■■■ Error End ■■■■■n";
+		}
+	}
+
+
 	public static function RunAll(){
 		$cl = strtolower(__CLASS__);
 		//获取所有class类 并从中初始化Biger开头的class
@@ -161,5 +175,9 @@ class Biger{
 	
 	public static function TimerDelAll(){
 		return \Workerman\Lib\Timer::delAll();
+	}
+	
+	public function AsyncTcpConnection($url=''){
+		return new \Workerman\Connection\AsyncTcpConnection($url);
 	}
 }

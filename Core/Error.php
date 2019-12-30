@@ -115,6 +115,7 @@ class Error {
 		if(defined('__BIGER__')){
 			echo "■■■■■■■■■■■■■ KSAOS {$title}错误 ■■■■■■■■■■■■■\n";
 			echo '■■ '.$Msg."\n";
+			print_r($phpmsg);
 			echo "■■■■■■■■■■■■■ KSAOS End ■■■■■■■■■■■■■\n";
 		}else{
 			if(isset($_GET['ajax'])){
