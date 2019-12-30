@@ -235,7 +235,8 @@ function roundF($val='',$N=0){
 	if(strpos($N,'0.') === 0){
 		$N = strlen(substr($N,2));//小数位精度位数
 	}
-	if($N>0){		
+	if($N>0){
+		$val += 0; //解决浮点数作为string传入后带来的判断问题
 		if(is_float($val) || is_double($val)){
 			$N = pow(10, $N);
 			$val = floor($val * $N) / $N;
