@@ -86,11 +86,13 @@ function cache($skey, $data=NULL, $ttl=0, $isUpdate=0){
 		return APP::Cache('del',$skey);
 	}else{
 		if($isUpdate){
-			$dt = (array)APP::Cache('get', $skey);
-			foreach($data as $key => $value){
-				$dt[$key] = $value;
+			$dt = APP::Cache('get', $skey);
+			if(is_array($dt)){
+				foreach($data as $key => $value){
+					$dt[$key] = $value;
+				}
+				$data = $dt;
 			}
-			$data = $dt;
 		}
 		return APP::Cache('set', $skey, $data, $ttl);
 	}
