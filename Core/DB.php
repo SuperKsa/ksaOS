@@ -24,8 +24,11 @@ if(!defined('KSAOS')) {
 function DB($table , $as=''){
 	$ExtensionFile = PATHS.'table/table_'.$table.'.php';
 	if(is_file($ExtensionFile)){
-		include_once $ExtensionFile;
 		$new = 'ksaOS\DB_'.$table;
+		if(!class_exists($new,false)){
+			include_once $ExtensionFile;
+		}
+		
 		$new = new $new();
 	}else{
 		$new = new DB();
@@ -73,6 +76,14 @@ class DB{
 	
 	public function close(){
 		self::$DB->close();
+	}
+	
+	/**
+	 * 提供给子类一个对象
+	 * @return $this
+	 */
+	protected function OBJ(){
+		return $this;
 	}
 
 	/**
