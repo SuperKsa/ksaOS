@@ -236,7 +236,7 @@ function roundF($val='',$N=0){
 		$N = strlen(substr($N,2));//小数位精度位数
 	}
 	if($N>0){		
-		if(is_float($val)){
+		if(is_float($val) || is_double($val)){
 			$N = pow(10, $N);
 			$val = floor($val * $N) / $N;
 		}else{
