@@ -133,8 +133,8 @@ class Curls{
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HEADER => 3,
-			CURLOPT_CONNECTTIMEOUT => 3, //握手时间固定1秒 没响应直接断开
-			CURLOPT_TIMEOUT => $timeout, //文件下载时间 超过直接断开
+			CURLOPT_CONNECTTIMEOUT => 5, //x秒内没响应直接断开
+			CURLOPT_TIMEOUT => $timeout, //连接后超过N秒没获取到数据直接断开 如一个文件10秒未下载完成则断开
 		];
 		if($setoptDataAppend){
 			foreach($setoptDataAppend as $key => $value){
