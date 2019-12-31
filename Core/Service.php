@@ -119,8 +119,7 @@ class Service{
 		}
 		@include_once ROOT.'config.php';
 		$this->config = (array)$config;
-		//项目绝对路径
-		define('PATHS', ROOT.($config['PATHS'] ? $config['PATHS'] : 'App/'));
+		
 		define('KSAOS_DB_PRE', $config['db']['pre'] ? $config['db']['pre'] : '');
 		unset($config);
 		return $this;
@@ -317,7 +316,7 @@ class Service{
 			$token = $C['cookie']['token'];
 		}
 		if($token){
-			M\user::isLogin($token);
+			User::isLogin($token);
 		}
 		return $this;
 	}

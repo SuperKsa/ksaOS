@@ -39,11 +39,15 @@ var QQCaptcha = new TencentCaptcha(
  * @date    2019-11-29 11:11:58
  * @author  cr180 <cr180@cr180.com>
  * @version V1.0
- * @file Captcha_QQ.php (ksaOS / UTF-8)
+ * @file Qcaptcha.php (ksaOS / UTF-8)
  */
-namespace ksaOS\M;
+namespace ksaOS;
 
-class Captcha_QQ  extends \ksaOS\M{
+if(!defined('KSAOS')) {
+	exit('Error.');
+}
+
+class Qcaptcha{
 	const AID = '2070432416'; //AppID
 	const AppSecretKey = '0v9VzMCEbo9STyyg08YChFQ'; //App Secret Key
 	const srciptUrl = 'https://ssl.captcha.qq.com/TCaptcha.js'; //客户端接入网址
@@ -73,7 +77,7 @@ class Captcha_QQ  extends \ksaOS\M{
 			foreach($get as $k => $v){
 				$url .= '&'.$k.'='.$v;
 			}
-			$data = \ksaOS\APP::Curl()->send(self::CheckUrl.'?'.$url);
+			$data = APP::Curl()->send(self::CheckUrl.'?'.$url);
 			$data = $data ? json_decode($data['data'],true) : [];
 			if($data['response'] == '1'){
 				return true;

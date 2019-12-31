@@ -24,42 +24,62 @@ class Loader {
 		spl_autoload_register($load ?: 'ksaOS\Loader::load', true, true);
 	}
 	public static function load($class='') {
-		$cl = strtolower($class);
 		$spname = strtolower(__NAMESPACE__).'\\'; //当前命名空间
 		//不是ksaOS的命名空间直接略过不处理
-		if(substr($cl,0,6) != $spname){
+		if(substr(strtolower($class),0,6) != $spname){
 			return false;
 		}
+		self::_ksaOSLoad($class);
+	}
+	
+	private static function _ksaOSLoad($class=''){
+		//处理ksaOS的路由
 		$K = md5($class);
+		//已标记过的class不再处理
 		if(isset(self::$_F[$K])){
 			return false;
 		}
-		$S = $class;
-		$F = '';
-		$D = KSAOS.'Core/';
-		if(strpos($S, '\\') !== false){
-			if(strtolower(substr($S,0,6)) == $spname){
-				$S = substr($S,6);
-			}
-			$S = explode('\\', $S);
-			foreach($S as $i => $v){
+		
+		$spname = strtolower(__NAMESPACE__).'\\'; //当前命名空间
+		if(substr(strtolower($class),0,6) == $spname){
+			$class = substr($class,6);
+		}
+		//命名空间转换为路径
+		//如果命名空间有子级则每个命名空间首字母必须大写(除首字母外其余均小写)
+		if(strpos($class, '\\') !== false){
+			$cl = [];
+			foreach(explode('\\', $class) as $i => $v){
 				$v = strtolower($v);
-				$S[$i] = ucfirst($v);
+				$cl[] = ucfirst($v);
 			}
-			$S = implode('/',$S);
-			$F = ucfirst($S).'.php';
+			$class = implode('/',$cl);
+			unset($cl);
+		//调用单类文件时 文件名首字母大写 其余均小写
 		}else{
-			$F = ucfirst(strtolower($class)).'.php';
+			$class = ucfirst(strtolower($class));
 		}
-		if(is_file($D.$F)){
-			include_once $D.$F;
-			self::$_F[$K] = true;
-			return true;
-		}else{
-			throw new \Exception('文件不存在：'.$D.$F);
+		
+		//文件名首字母必须大写
+		$file = $class.'.php';
+		$core = KSAOS.'Core/';
+		$model = KSAOS.'Model/';
+		$loadFile = NULL;
+		//从Core核心层找文件
+		if(is_file($core.$file)){
+			$loadFile = $core.$file;
+		//Core找不到再从Model扩展层找
+		}elseif(is_file($model.$file)){
+			$loadFile = $model.$file;
 		}
+		//有文件时加载文件 否则不处理
+		if($loadFile){
+			include_once $loadFile;
+		}
+		//标记该class已被处理过
+		self::$_F[$K] = true;
 	}
-	
+
+
 	/**
 	 * 钩子函数
 	 * @global array $_HOOK_

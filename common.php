@@ -27,18 +27,6 @@ function loadFile($file){
 	return ROOT.'./'.$file.'.php';
 }
 
-function loadFunction($name){
-	global $C;
-	if(!$C['loadFunction'][$name]){
-		$C['loadFunction'][$name] = 1;
-		$file = loadFile('system/function/'.$name);
-		if(is_file($file)){
-			include_once $file;
-		}
-	}
-	return $file;
-}
-
 /** 临时使用函数!!!!
  * CSS文件自动加载并转换为H5
  * @param type $file

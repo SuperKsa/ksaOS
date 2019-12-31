@@ -16,6 +16,8 @@ $__DIRS__ = str_replace('\\','/', dirname(__FILE__) );
 define('ROOT', substr($__DIRS__, 0, -6).'/');
 //KSAOS核心路径
 define('KSAOS', $__DIRS__.'/');
+//项目绝对路径
+define('PATHS', ROOT.'App/');
 unset($__DIRS__);
 require_once KSAOS.'/Core/Loader.php';
 

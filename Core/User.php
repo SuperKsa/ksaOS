@@ -1,20 +1,20 @@
 <?php
 
 /**
- * 扩展库模块 - 登录相关
- * 所有function必须使用 public
+ * 登录相关
+ * 所有函数必须静态调用
  * @date    2019-11-28 17:06:04
  * @author  cr180 <cr180@cr180.com>
  * @version V1.0
  * @file User.php (ksaOS / UTF-8)
  */
-namespace ksaOS\M;
+namespace ksaOS;
 
 if(!defined('KSAOS')) {
 	exit('Error.');
 }
 
-class user extends \ksaOS\M{
+class User{
 	
 	/**
 	 * 校验用户token是否有效并自动登录
@@ -29,7 +29,7 @@ class user extends \ksaOS\M{
 		$user = self::checkToken($token);
 		if($user && $user['uid'] && $user['token']){
 			unset($user['salt'],$user['password']);
-			$user['avatar'] = \ksaOS\APP::Attach()->Url('avatar',$user['avatar']);
+			$user['avatar'] = APP::Attach()->Url('avatar',$user['avatar']);
 			$user['token'] = $token;
 			$C['uid'] = $user['uid'];
 			$C['user'] = $user;
@@ -41,7 +41,7 @@ class user extends \ksaOS\M{
 	
 	/**
 	 * 用户退出登录
-	 * M\User::Out('token','token2'); //一个参数代表一个需要清理的cookies
+	 * Out('token','token2'); //一个参数代表一个需要清理的cookies
 	 * @return boolean
 	 */
 	static function Out(){
@@ -49,9 +49,9 @@ class user extends \ksaOS\M{
 		$C['user'] = [];
 		$C['uid'] = 0;
 		$C['token'] = '';
-		\ksaOS\cookies('token','');
+		cookies('token','');
 		foreach(func_get_args() as $value){
-			\ksaOS\cookies($value,'');
+			cookies($value,'');
 		}
 		return true;
 	}
@@ -70,7 +70,7 @@ class user extends \ksaOS\M{
 			$PWstatus = self::checkPassword($user, $password);
 			if($PWstatus){
 				$token = self::getToken($user);
-				$s = \ksaOS\cookies('token',$token,86400 * 15);
+				$s = cookies('token',$token,86400 * 15);
 				unset($user['salt'],$user['password']);
 				$user['token'] = $token;
 				$C['user'] = $user;
@@ -106,11 +106,11 @@ class user extends \ksaOS\M{
 	 * @return boolean|array 成功返回用户数据且附带token字段 否则false
 	 */
 	static function checkToken(string $token='', $ck=''){
-		$decodetoken = \ksaOS\base('DECODE',$token);
+		$decodetoken = base('DECODE',$token);
 		list($uid,$password) = explode('_', $decodetoken);
 		$uid = intval($uid);
 		if($uid && $password){
-			$user = \ksaOS\DB('user')->where('uid',$uid)->fetch_first();
+			$user = DB('user')->where('uid',$uid)->fetch_first();
 			$pw = self::__tokenPW($user, $ck);
 			if($password == $pw){
 				unset($user['salt'],$user['password']);
@@ -130,7 +130,7 @@ class user extends \ksaOS\M{
 	static function getToken($user=[], $ck=''){
 		$token = self::__tokenPW($user, $ck);
 		if($token){
-			$token = \ksaOS\base('ENCODE', $user['uid'].'_'.$token);
+			$token = base('ENCODE', $user['uid'].'_'.$token);
 		}
 		return $token;
 	}
@@ -155,7 +155,7 @@ class user extends \ksaOS\M{
 	 * @return array 返回：参数1=密码 参数2=混淆字符
 	 */
 	static function getPwSign($pw){
-		$salt = \ksaOS\rands(6);
+		$salt = rands(6);
 		$pw = md5($pw.md5($salt));
 		return ['password'=>$pw,'salt'=>$salt];
 	}
