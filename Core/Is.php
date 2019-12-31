@@ -105,6 +105,13 @@ class IS{
 		return false;
 	}
 	
+	public static function Mobile($str=0) {
+		if(mb_strlen($str) == 11 && preg_match("/^1([0-9]{10})$/", $str)){
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * 条件判断并输出一条错误提示
 	 * @param type $condition if条件
