@@ -16,11 +16,13 @@ if(!defined('KSAOS')) {
 
 class IS{
 	const _name = 'ksaOS 判断处理类';
-	/**
-	 * 判断是否为POST
-	 * @param type $formID 前台是否提交该表单名称
-	 * @return boolean 成功返回true
-	 */
+
+    /**
+     * 判断是否为POST
+     * @param  string  $formID 前台是否提交该表单名称
+     *
+     * @return bool 成功返回true
+     */
 	public static function POST(string $formID=''){
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			if($formID){
@@ -76,7 +78,7 @@ class IS{
 	/**
 	 * 判断是否为邮箱地址
 	 * @param string $email 邮箱地址
-	 * @return type 成功返回true
+	 * @return boolean 成功返回true
 	 */
 	public static function email(string $email='') {
 		return filter_var($email, FILTER_VALIDATE_EMAIL) ? true : false;
@@ -85,38 +87,46 @@ class IS{
 	/**
 	 * 判断是否为IPV6地址
 	 * @param string $ip IPV4或IPV6地址
-	 * @param type $isIPv6 1=IPV6 默认IPV4
+	 * @param string $isIPv6 1=IPV6 默认IPV4
 	 * @return boolean
 	 */
 	public static function IP(string $ip='', $isIPv6=false) {
 		return $isIPv6 ? filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) : filter_var($ip, FILTER_VALIDATE_IP);
 	}
-	
-	/**
-	 * 判断是否为电话号码
-	 * @param type $str
-	 * @param type $cn
-	 * @return boolean
-	 */
+
+    /**
+     * 判断是否为电话号码
+     * @param  int     $str
+     * @param  int     $cn
+     * @param  string  $type
+     *
+     * @return bool
+     */
 	public static function Phone($str=0, $cn=86, $type='mobile') {
 		if($type == 'mobile' && $cn == 86 && mb_strlen($str) == 11 && preg_match("/^1([0-9]{10})$/", $str)){
 			return true;
 		}
 		return false;
 	}
-	
+
+    /**
+     * 判断是否为手机号码
+     * @param  int  $str 手机号
+     *
+     * @return bool
+     */
 	public static function Mobile($str=0) {
 		if(mb_strlen($str) == 11 && preg_match("/^1([0-9]{10})$/", $str)){
 			return true;
 		}
 		return false;
 	}
-	
-	/**
-	 * 条件判断并输出一条错误提示
-	 * @param type $condition if条件
-	 * @param type $msg 错误提示信息
-	 */
+
+    /**
+     * 条件判断并输出一条错误提示
+     * @param  bool $condition
+     * @param  string  $msg
+     */
 	public static function F($condition, $msg=''){
 		if($condition){
 			Msg($msg);
