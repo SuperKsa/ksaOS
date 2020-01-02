@@ -53,6 +53,20 @@ class Files{
 	}
 	
 	/**
+	 * 返回路径中的目录路径
+	 * @param string $dir 路径地址（可以包含文件）
+	 * @return boolean/path 返回目录路径 最后有/
+	 */
+	public static function dir(string $dir=''){
+		if($dir){
+			$d = pathinfo($dir);
+			return $d['dirname'].'/';
+		}
+		return false;
+	}
+
+
+	/**
 	 * 判断是否是一个目录名称
 	 * 目录名不能包含：\<>/:*?"|'
 	 * @param type $name
@@ -74,10 +88,7 @@ class Files{
 		if(!$isext){
 			$file = $info['filename'];
 		}
-		if(!preg_match('/\\<>\/:\*\?"\|/', $file)){
-			return $file;
-		}
-		return NULL;
+		return $file;
 	}
 	
 	/**
