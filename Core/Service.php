@@ -104,7 +104,7 @@ class Service{
 		$this->debug()->start('Core');
 		
 		
-		$this->_FunctionCore()->_setDefine()->_RAM()->__Db()->__Event()->__Setting()->__user()->__mobile()->__End();	
+		$this->_FunctionCore()->_setDefine()->_RAM()->__Db()->__Event()->__Setting()->__user()->__End();	
 		return $this;
 	}
 	/**
@@ -217,7 +217,7 @@ class Service{
 
 			'siteurl' => '',//当前程序根绝对地址 http://www.xxx.com/
 			'pathurl' => '', //当前页面相对地址 
-			'staticUrl' => $this->config['staticUrl'] ? $this->config['staticUrl'] : './',//静态资源目录访问地址
+			'staticUrl' => $this->config['staticUrl'] ? $this->config['staticUrl'] : '',//静态资源目录访问地址
 			'staticHash' => $this->config['statichash'] ? $this->config['statichash'] : time(),//静态资源缓存hash
 			'picurl' => $this->config['picUrl'],//图片域名地址
 			'gzip' => 0,  //GZIP是否开启 1=开启
@@ -262,6 +262,9 @@ class Service{
 		}
 		$siteurl = chtmlspecialchars('http'.(HTTPS ? 's' : '').'://'.$host.$siteurl.'/');
 		$C['siteurl'] = $siteurl;
+		if(!$C['staticUrl']){
+			$C['staticUrl'] = $siteurl;
+		}
 		unset($siteurl,$host);
 		
 		if(!(strpos($C['picurl'],'http') ===0)){
@@ -277,26 +280,14 @@ class Service{
 		return $this;
 	}
 	
-	
 	private function __setting() {
 		global $C;
 		$setting = DB('setting')->fetch_all('skey');
-		$C['staticUrl'] = isset($setting['CDN_url']) ? $setting['CDN_url'] : '';
+		if(isset($setting['CDN_url']) && $setting['CDN_url']){
+			$C['staticUrl'] = $setting['CDN_url'];
+		}
 		$C['setting'] = $setting;
 		$C['TITLE'] = isset($setting['sitename']) ? $setting['sitename'] : '';
-		return $this;
-	}
-	
-	
-	/**
-	 * 检测当前是否为移动端
-	 */
-	private function __mobile() {
-		
-		$mobile = IS::Pmd();
-		$wechat = IS::Wechat();
-		define('MOBILE', $mobile);
-		define('WECHAT', $wechat);
 		return $this;
 	}
 	
