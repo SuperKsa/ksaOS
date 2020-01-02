@@ -8,7 +8,6 @@
  * @file Template.php (KSAOS底层 / UTF-8)
  */
 namespace ksaOS;
-use Exception;
 if(!defined('KSAOS')) {
 	exit('Error.');
 }
@@ -25,36 +24,41 @@ class template {
 		}
 		$tplDir = $tplDir ? $tplDir : TPLDIR;
 		$cachedir = 'data/cache/template/';
-		APP::File()->mkdir(ROOT.$cachedir,0777);
+		$cachedir = Files::dir(ROOT.$cachedir.$tplfile);
+		Files::mkdir($cachedir, 0777);
+		$tplName = Files::name($tplfile.'.php');
+		$cachefile = $cachedir.$tplName;
+		
 		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer', 'admin/common/header','admin/common/footer'])){
 			$tplfile = $tplfile.'_ajax';
 		}
-		$cachefile = ROOT.$cachedir.str_replace('/','_',$tplfile).'.php';
+		
 		$tplfile = $tplDir.$tplfile.'.php';
 		
 		if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在', str_replace(ROOT,'',$tplfile));
 		}
 		
-		$file_time = filemtime($tplfile);
-		//提取缓存文件最后修改时间做比对 如果缓存的修改时间与当前模板修改时间相同，则不做更新处理
-		$cache_template = @file_get_contents($cachefile);
-		if($cache_template) {
-			preg_match_all("/<\?php\s\/\/ThisUpdateEndTime\:(\d+)/",$cache_template,$temp);
-			if($temp['1']['0'] && $temp['1']['0'] == $file_time){
-				return $cachefile;
-			}
-			unset($cache_template);
-		}
-		//End
 		
+		if(is_file($cachefile)){
+			$file_time = filemtime($tplfile);
+			//提取缓存文件最后修改时间做比对 如果缓存的修改时间与当前模板修改时间相同，则不做更新处理
+			$cache_template = @file_get_contents($cachefile);
+			if($cache_template) {
+				preg_match_all("/<\?php\s\/\/ThisUpdateEndTime\:(\d+)/",$cache_template,$temp);
+				if($temp['1']['0'] && $temp['1']['0'] == $file_time){
+					return $cachefile;
+				}
+			}
+			unset($cache_template, $temp);
+			//End
+		}
 		
 		$this->file = $tplfile;
 		
 		$Code = file_get_contents($tplfile);
 		
 		if($Code){
-			
 			
 			$Code = preg_replace("/^[\n\r\t\s]*?<\?php exit.*?\?>/i",'',$Code);//消除开始的防盗语句
 			$Code = trim($Code);
@@ -193,5 +197,3 @@ class template {
 		return $search;
 	}
 }
-
-?>
