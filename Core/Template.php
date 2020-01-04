@@ -28,8 +28,7 @@ class template {
 		Files::mkdir($cachedir, 0777);
 		$tplName = Files::name($tplfile.'.php');
 		$cachefile = $cachedir.$tplName;
-		
-		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer', 'admin/common/header','admin/common/footer'])){
+		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
 			$tplfile = $tplfile.'_ajax';
 		}
 		

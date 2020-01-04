@@ -32,7 +32,7 @@ class Biger{
 	protected $count = 1; // 启动1个进程对外提供服务
 	protected $protocol = NULL; //设置当前Worker实例的协议类。
 	protected $transport = NULL; //设置当前Worker实例所使用的传输层协议，目前只支持3种(tcp、udp、ssl)。不设置默认为tcp。
-	protected $reusePort = false; //允许多个无亲缘关系的进程监听相同的端口，并且由系统内核做负载均衡，决定将socket连接交给哪个进程处理，避免了惊群效应，可以提升多进程短连接应用的性能。
+	protected $reusePort = true; //允许多个无亲缘关系的进程监听相同的端口，并且由系统内核做负载均衡，决定将socket连接交给哪个进程处理，避免了惊群效应，可以提升多进程短连接应用的性能。
 	
 	protected $connections, $stdoutFile, $pidFile, $logFile, $user, $reloadable ,$daemonize, $globalEvent = NULL;
 	
