@@ -18,7 +18,7 @@ class Woker1 extends \ksaOS\Biger{
  * @file Biger.php (ksaos / UTF-8)
  */
 namespace ksaOS;
-require_once KSAOS.'/extend/Workerman/Autoloader.php';
+require_once KSAOS.'/Extend/Workerman/Autoloader.php';
 \Workerman\Worker::$logFile = ROOT.'data/cache/workerman.log';
 
 class Biger{
