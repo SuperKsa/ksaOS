@@ -150,4 +150,22 @@ class Cache{
 			return @unlink($File) ? true : false;
 		}
 	}
+	
+	/**
+	 * 日志缓存
+	 * @param string $type 标识 必须字母
+	 * @param array $message 日志内容 必须数组
+	 */
+	public static function log($type='system', $message=[]) {
+		
+		$file =  ROOT.'./data/runlog/'.$type.'/'.date('Y-m-d').'/'.date('H').'.php';
+		$message = json_encode($message, JSON_UNESCAPED_UNICODE);
+		$hash = md5($message);
+		Files::mkdir(dirname($file));
+		$D = ['<?PHP exit;?>'];
+		$D[] = date('Y-m-d H:i:s');
+		$D[] = $message;
+		$D = implode("\t", $D)."\n";
+		error_log($D, 3, $file);
+	}
 }

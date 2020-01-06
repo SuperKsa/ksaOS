@@ -54,6 +54,22 @@ class Dates{
 	}
 	
 	/**
+	 * 日期转格林威治日期
+	 * @param type $date 需要转换的日期 不传入则默认为当前时间
+	 * @param type $F 日期格式
+	 * @return date
+	 */
+	public static function timeUTC($date=NULL, $F='Y-m-d H:i:s'){
+		$date = self::timestamp($date);
+		return $date >0 ? gmdate($F, $date) : '';
+	}
+	
+	public static function UTCtime($date=NULL, $F='Y-m-d H:i:s'){
+		$date = self::timestamp($date);
+		return $date >0 ? self::times($date, $F) : '';
+	}
+	
+	/**
 	 * 将时间戳格式化为日期格式
 	 * @param type $timestamp UTC时间戳（支持毫/微秒级 默认当前10位时间戳）
 	 * @param type $format 日期格式
@@ -159,13 +175,17 @@ class Dates{
 			}
 			$time = strtotime($time).$ms;
 		}
-		$strlen = strlen($time);
-		//大于N位 截取
-		if($strlen >$F){
-			$time = substr($time, 0, $F);
-		//不足N位 补0
-		}elseif($strlen < $F){
-			$time = str_pad($time,$F,0,STR_PAD_RIGHT);
+		if($time >0){
+			$strlen = strlen($time);
+			//大于N位 截取
+			if($strlen >$F){
+				$time = substr($time, 0, $F);
+			//不足N位 补0
+			}elseif($strlen < $F){
+				$time = str_pad($time,$F,0,STR_PAD_RIGHT);
+			}
+		}else{
+			$time = 0;
 		}
 		return $time;
 	}
