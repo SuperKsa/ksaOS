@@ -51,42 +51,54 @@ class Route{
 		}
 		define('ROUTE_INIT___', true);
 		
-		$File = $C['M'].'.php';
-		$M_ClassInit = $__M_FunInit = '';
-		$ScriptClass = 'ksaOS\Page_'.$C['M'];
-
-		if(is_file(PATHS.$File)){
-			include_once PATHS.$File;
-			if(class_exists($ScriptClass)){
-				$M_ClassInit = new $ScriptClass;
-				$Fun = $C['D'];
-				if($Fun && method_exists($ScriptClass, $Fun)){
-					$M_ClassInit->$Fun();
-					$__M_FunInit = 1;
+		$Class = 'ksaOS\APP';
+		$Fun = $C['D'];
+		
+		$loadFile = 0;
+		$Dir = PATHS;
+		$R = explode('/',$C['R']);
+		$Fun = count($R) >3 ? array_pop($R) : end($R);
+		$Loads = [];
+		$upValue = '';
+		foreach($R as $key => $value){
+			if(is_file($Dir.$upValue.$value.'.php')){
+				$Loads[] = $Dir.$upValue.$value.'.php';
+				include_once $Dir.$upValue.$value.'.php';
+				if($key == 0){
+					$Dir .= $ModelName.'/';
 				}
-				unset($Fun);
+				$Dir .= $value.'/';
+				$Class .= '_'.$value;
+				$upValue .= $value.'_';
 			}
 		}
-
-		$SubFile = $ModelName.'/'.$C['M'].'/'.$C['M'].'_'.$C['O'].'.php';
-		if(is_file(PATHS.$SubFile)){
-			include_once PATHS.$SubFile;
-			$ScriptClass .= '_'.$C['O'];
-			$Fun = $C['D'];
-			$class = '';
-			if(class_exists($ScriptClass)){
-				$class = new $ScriptClass;
+		$__M_FunInit = 0;
+		if($Loads){
+			if(class_exists($Class,false)){
+				$OBJ = new $Class;
 			}
-			if(!method_exists($ScriptClass, $Fun)){
+			if(method_exists($OBJ, 'common')){
+				$OBJ->common();
+			}
+			if(method_exists($OBJ, 'commonPost')){
+				$OBJ->commonPost();
+			}
+			if(method_exists($OBJ, 'commonView')){
+				$OBJ->commonView();
+			}
+			if(!method_exists($OBJ, $Fun)){
 				$Fun = 'index';
 			}
-			if(method_exists($ScriptClass, $Fun)){
-				$class->$Fun();
+			if(method_exists($OBJ, $Fun)){
+				$OBJ->$Fun();
+				$__M_FunInit = 1;
 			}else{
 				Msg('错误的参数：'.$C['R']);
 			}
-		}elseif(!$__M_FunInit){
-			throw new \Exception('错误的访问：'.$C['R'],404);
+		}
+		
+		if(!$__M_FunInit){
+			throw new \Exception('错误的访问：'.$Class,404);
 		}
 	}
 	
@@ -100,24 +112,23 @@ class Route{
 			return false;
 		}
 		$C['R'] = trim($_GET['R'],'/ ');
-		$R = [];
-		$C['MOD'] = [];
-		$i = 0;
-		foreach(explode('/',$C['R']) as $k => $value){
+		$C['R'] = preg_replace('/\/\//', '/', $C['R']);
+		$R = explode('/',$C['R']);
+		//R参数安全过滤只允许字母、数字、下划线、横杠
+		foreach($R as $k => $value){
 			$value = urldecode(trim($value));
-			if($k <=2){//M、O、D三个参数安全过滤只允许字母、数字、下划线、横杠
-				$value = preg_replace('/[^a-z0-9_\-]/i','',$value);
+			$value = preg_replace('/[^a-z0-9_\-]/i','',$value);
+			$R[$k] = $value ? $value : 'index';
+		}
+		for($i=0;$i<3;$i++){
+			if(!isset($R[$i])){
+				$R[$i] = 'index';
 			}
-			$R[] = $value;
-			if($i >2){
-				$C['MOD'][] = $value;
-			}
-			$i ++;
 		}
 		$C['M'] = isset($R[0]) && $R[0] ? $R[0] : self::DEF['M']; //模型 无请求默认
 		$C['O'] = isset($R[1]) && $R[1] ? $R[1] : self::DEF['O']; //功能 无请求默认
 		$C['D'] = isset($R[2]) && $R[2] ? $R[2] : self::DEF['D'];//动作 无请求默认
-		$C['R'] =  $C['M'].'/'.$C['O'].'/'.$C['D'];
+		$C['R'] =  implode('/',$R);
 	}
 	
 	/**

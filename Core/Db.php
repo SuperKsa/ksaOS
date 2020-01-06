@@ -629,17 +629,24 @@ class DB{
 				return $field.' IS NULL';
 			case ($glue == 'notnull'):
 				return $field.' IS NOT NULL';
-			case (in_array($glue, ['like','notlike'])): //likes值支持数组多个值 and方式连接
+			case (in_array($glue, ['like','keyword','notlike'])): //likes值支持数组多个值 and方式连接
 				$s = $glue =='notlike' ? ' NOT LIKE ' : ' LIKE ';
 				$val = str_replace(['(',')',';','$','`'],'',$val);
 				$r = '';
 				$u = $tp =='or' ? ' OR ' : ' AND ';
 				if(is_array($val)){
 					foreach($val as $k => $v){
-						$val[$k] = $field.$s.self::__valueQ($v);
+						if($glue =='keyword'){
+							$v = '%'.$v.'%';
+						}
+						$v = $field.$s.self::__valueQ($v);
+						$val[$k] = $v;
 					}
 					$r = '('.implode($u,$val).')';
 				}else{
+					if($glue =='keyword'){
+						$val = '%'.$val.'%';
+					}
 					$r = $field.$s.self::__valueQ($val);
 				}
 				return $r;

@@ -55,21 +55,6 @@ class APP extends Service{
 		self::$DB->close();
 	}
 	
-	function CoreInit(){}
-	//$C[M]开始前
-	function common(){}
-	
-	//$C[M] 至 $C[D]
-	function Start(){}
-	
-	
-	
-	//模块前端被访问
-	function view(){}
-	
-	//模块POST提交前
-	function Post(){}
-	
 	/**
 	 * 静态初始化本类
 	 * Woker框架不能使用此函数 应该使用 __Run()

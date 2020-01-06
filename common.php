@@ -128,7 +128,22 @@ function trims($dt='',$isKey=false){
  * 重定向地址
  * @param type $url
  */
-function clocation($url){
+function clocation($url=NULL){
+	if(is_null($url) || is_array($url)){
+		if(is_array($url)){
+			$get = $url;
+		}else{
+			$get = $_GET;
+		}
+		$url = $get['R'];
+		foreach($get as $key => $value){
+			if($key=='R' || $value == ''){
+				unset($get[$key]);
+			}
+		}
+		$url .= !empty($get) ? '?'.http_build_query($get) : '';
+	}
+	$url = $url ? $url : '/';
 	header('Location: '.$url);
 	exit;
 }
