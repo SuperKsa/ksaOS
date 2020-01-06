@@ -154,13 +154,13 @@ function clocation($url=NULL){
  * @param type $default 没有来路时的默认地址
  * @return type
  */
-function creferer($default = './') {
+function creferer($default = '/') {
 	global $C;
 
 	$C['referer'] = !empty($_GET['referer']) ? $_GET['referer'] : $_SERVER['HTTP_REFERER'];
 	$C['referer'] = substr($C['referer'], -1) == '?' ? substr($C['referer'], 0, -1) : $C['referer'];
 
-	if(strpos($C['referer'], 'index.php?mod=login')) {
+	if(strpos($C['referer'], 'user/login')) {
 		$C['referer'] = $default;
 	}
 	$C['referer'] = $C['referer'] ? $C['referer'] : $default;
