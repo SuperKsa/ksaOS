@@ -99,7 +99,7 @@ class Route{
 		if(!isset($_GET['R'])){
 			return false;
 		}
-		$C['R'] = trim($_GET['R']);
+		$C['R'] = trim($_GET['R'],'/ ');
 		$R = [];
 		$C['MOD'] = [];
 		$i = 0;
@@ -117,7 +117,6 @@ class Route{
 		$C['M'] = isset($R[0]) && $R[0] ? $R[0] : self::DEF['M']; //模型 无请求默认
 		$C['O'] = isset($R[1]) && $R[1] ? $R[1] : self::DEF['O']; //功能 无请求默认
 		$C['D'] = isset($R[2]) && $R[2] ? $R[2] : self::DEF['D'];//动作 无请求默认
-		
 		$C['R'] =  $C['M'].'/'.$C['O'].'/'.$C['D'];
 	}
 	

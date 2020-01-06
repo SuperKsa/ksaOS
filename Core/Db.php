@@ -581,6 +581,14 @@ class DB{
 	 */
 	public function __field($field='', $val='', $glue = '=') {
 		$glue = $glue === false ? '=' : strtolower($glue);
+		$tp = 'string';
+		if(strpos($field,':') !== false){
+			list($tp,$field) = explode(':',$field);
+			$tp = strtolower($tp);
+		}
+		if($tp =='int'){
+			$val += ($val);
+		}
 		
 		//查询条件标准组合函数 外部使用
 		$field = self::__fieldQ($field);
@@ -606,53 +614,43 @@ class DB{
 			}
 		}
 		
-		switch ($glue) {
-			case '=':
-				return $field . $glue . self::__valueQ($val);
-			case '+=':
-				return $field . '=' .$field.'+'. abs($val);
-			case '-=':
-				return $field . '=' .$field.'-'. abs($val);
-			case '-':
-				return $field . '=' . $field . $glue . self::__valueQ((string) $val);
-			case '+':
-				return $field . '=' . $field . $glue . self::__valueQ((string) $val);
-			case '|':
-			case '&':
-			case '^':
-				return $field . '=' . $field . $glue . self::__valueQ($val);
-			case '>':
-			case '<':
-			case '<>':
-			case '<=':
-			case '>=':
-				return $field . $glue . self::__valueQ($val);
-			case '!=':
-				return $field . $glue . self::__valueQ($val);
-			case 'null':
-				return $field . ' IS NULL';
-			case 'notnull':
-				return $field . ' IS NOT NULL';
-			case 'like': //likes值支持数组多个值 and方式连接
+		switch (true) {
+			case (in_array($glue, ['=','>','<','<>','<=','>=','!='])):
+				return $field.$glue.self::__valueQ($val);
+			case ($glue == '+='):
+				return $field.'=' .$field.'+'. abs($val);
+			case ($glue == '-='):
+				return $field.'=' .$field.'-'. abs($val);
+			case ($glue == '-'):
+				return $field.'=' . $field.$glue . self::__valueQ($val);
+			case ($glue == '+'):
+				return $field.'=' . $field.$glue . self::__valueQ($val);
+			case ($glue == 'null'):
+				return $field.' IS NULL';
+			case ($glue == 'notnull'):
+				return $field.' IS NOT NULL';
+			case (in_array($glue, ['like','notlike'])): //likes值支持数组多个值 and方式连接
+				$s = $glue =='notlike' ? ' NOT LIKE ' : ' LIKE ';
 				$val = str_replace(['(',')',';','$','`'],'',$val);
+				$r = '';
+				$u = $tp =='or' ? ' OR ' : ' AND ';
 				if(is_array($val)){
 					foreach($val as $k => $v){
-						$val[$k] = $field.' LIKE '.self::__valueQ($v);
+						$val[$k] = $field.$s.self::__valueQ($v);
 					}
-					return implode(' AND ',$val);
+					$r = '('.implode($u,$val).')';
 				}else{
-					return $field . ' LIKE '.self::__valueQ($val);
+					$r = $field.$s.self::__valueQ($val);
 				}
-			case 'in':
+				return $r;
+			case (in_array($glue, ['in','notin'])):
+				$s = $glue =='notin' ? ' NOT IN ' : ' IN ';
 				if($isObj){
-					return $field.' IN ('.$val.')';
+					return $field.$s.'('.$val.')';
 				}else{
 					$val = $val ? implode(',', self::__valueQ($val)) : '\'\'';
-					return $field.' IN ('.$val.')';
+					return $field.$s.'('.$val.')';
 				}
-			case 'notin':
-				$val = $val ? implode(',', self::__valueQ($val)) : '\'\'';
-				return $field.' NOT IN ('.$val.')';
 			default:
 				throw new \Exception('系统不支持该类型的组合: '.$glue);
 		}

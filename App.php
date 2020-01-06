@@ -85,9 +85,8 @@ class APP extends Service{
 		if(gettype($Fun) =='object'){
 			$Fun();
 		}
-		self::OBJ()->Route()->Run();
+		self::Route()->Run();
 		self::__End();
-		
 		$content = ob_get_contents();
 		ob_end_clean();
 		defined('GZIP') ? ob_start('ob_gzhandler') : ob_start();

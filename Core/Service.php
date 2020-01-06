@@ -229,6 +229,7 @@ class Service{
 			'cookie' => [], //浏览器cookies
 			'sessoin' => [], //Session
 			'setting' => [],
+			'CSSLIST' => [],
 		];
 		
 		//如果服务器开启了魔术引号 则过滤掉字符串中的反斜杠
