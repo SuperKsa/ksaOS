@@ -33,11 +33,9 @@ class template {
 		}
 		
 		$tplfile = $tplDir.$tplfile.'.php';
-		
 		if(!is_file($tplfile)){
-			throw new \Exception('模板文件不存在', str_replace(ROOT,'',$tplfile));
+			throw new \Exception('模板文件不存在：'.str_replace(ROOT,'',$tplfile));
 		}
-		
 		
 		if(is_file($cachefile)){
 			$file_time = filemtime($tplfile);
