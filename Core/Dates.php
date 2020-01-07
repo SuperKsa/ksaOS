@@ -13,8 +13,8 @@ namespace ksaOS;
 if(!defined('KSAOS')) {
 	exit('Error.');
 }
-
-
+//直接初始化当前时区值
+Dates::zone();
 class Dates{
 	const _name = 'ksaOS时间处理类';
 	
@@ -173,7 +173,7 @@ class Dates{
 			if(strpos($time,'.') !== false){
 				list($time,$ms) = explode('.',$time);
 			}
-			$time = strtotime($time).$ms;
+			$time = strtotime($time.' UTC').$ms;
 		}
 		if($time >0){
 			$strlen = strlen($time);
