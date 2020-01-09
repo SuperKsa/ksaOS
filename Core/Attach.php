@@ -22,7 +22,7 @@ class Attach{
 	 * @return string
 	 */
 	public static function idtype($idtype){
-		if(in_array($idtype,['article','user','avatar'])){
+		if(in_array($idtype,['article','shop','goods','user','avatar'])){
 			return $idtype;
 		}
 	}

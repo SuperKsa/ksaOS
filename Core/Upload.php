@@ -69,7 +69,7 @@ class Upload {
 			$this->FILE['ext'] = APP::File()->ext($file['name']);
 			$this->FILE['name'] = $newName.'.'.$this->FILE['ext'];
 			//目录结构：/年月/日/时/文件名前两位/
-			$this->FILE['dir'] = '/'.(DATE_YEAR.DATE_MONTH).'/'.DATE_DAY.'/'.DATE_HOUR.'/'. substr($newName, 0,2).'/';
+			$this->FILE['dir'] = '/'.(date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($newName, 0,2).'/';
 			$this->FILE['path'] = $this->FILE['dir'].$this->FILE['name'];
 			$saveDir = ROOT.'data/attach/'.$Mod.'/'.$this->FILE['dir'];
 			$this->FilePath = $saveDir.$this->FILE['name'];
