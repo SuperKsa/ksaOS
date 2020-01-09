@@ -22,7 +22,7 @@ class Attach{
 	 * @return string
 	 */
 	public static function idtype($idtype){
-		if(in_array($idtype,['article','shop','goods','user','avatar'])){
+		if(in_array($idtype,['temp', 'article','shop','goods','user','avatar'])){
 			return $idtype;
 		}
 	}
@@ -49,16 +49,23 @@ class Attach{
 		APP::hook(__CLASS__ , __FUNCTION__);
 		if($idtype && $aid >0){
 			$data = DB('attach_temp')->where('aid',$aid)->fetch_first();
+			
 			if($data){
-				$tableID = self::tableID($idtype, $id);
-				$data['idtype'] = $idtype;
-				$data['id'] = $id;
-				$data['aid'] = DB('attach')->insert([
-					'idtype'=>$idtype,
-					'id' => $id
-				],true);
-				if($data['aid'] > 0){
-					DB('attach_'.$tableID)->insert($data);
+				$tempFile = ROOT.self::Path('temp', $data['src']);
+				$newFile = ROOT.self::Path($idtype, $data['src']);
+				Files::mkdir(dirname($newFile));
+				if(copy($tempFile, $newFile)){
+					$tableID = self::tableID($idtype, $id);
+					$data['idtype'] = $idtype;
+					$data['id'] = $id;
+					$data['aid'] = DB('attach')->insert([
+						'idtype'=>$idtype,
+						'id' => $id
+					],true);
+					if($data['aid'] > 0){
+						DB('attach_'.$tableID)->insert($data);
+					}
+					self::del($aid, 'temp', 0, 1);
 					return $data;
 				}
 			}
