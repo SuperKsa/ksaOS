@@ -80,7 +80,7 @@ class Attach{
 	 * @param int $id 模块ID （可选 支持多个 必须存在$idtype）
 	 * @param type $isTmp 是否为临时附件 1=是[默认] 0=否
 	 */
-	public static function del($aid, $idtype, $id, $isTmp=0){
+	public static function del($idtype, $aid, $id, $isTmp=0){
 		$aid = ints($aid,1);
 		$id = ints($id,1);
 		$idtype = self::idtype($idtype);
