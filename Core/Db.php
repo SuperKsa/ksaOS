@@ -119,11 +119,16 @@ class DB{
 	/**
 	 * 构造器 SELECT （可选，默认*）
 	 * 一个参数代表一个select 'field-1','field-2',...... || 'count(field) as count','MAX(field) as max'
+	 * 支持第一个参数以数组方式传递，此时不能传第二个参数
 	 * 参数支持闭包函数返回值 （PHP7特性 一般用于子查询）
 	 * @return $this
 	 */
 	public function select(){
-		foreach(func_get_args() as $val){
+		$args = func_get_args();
+		if(!isset($args[2]) && is_array($args[0])){
+			$args = $args[0];
+		}
+		foreach($args as $val){
 			if(is_object($val)){
 				$this->selects[] = $val();
 			}else{
