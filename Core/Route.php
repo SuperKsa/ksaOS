@@ -43,7 +43,7 @@ class Route{
 	public static function Run($ModelName='model'){
 		global $C;
 		
-		if(!$C['M']){
+		if(!$C['R']){
 			return false;
 		}
 		if(defined('ROUTE_INIT___')){
@@ -52,7 +52,7 @@ class Route{
 		define('ROUTE_INIT___', true);
 		
 		$Class = 'ksaOS\APP';
-		$Fun = $C['D'];
+		$Fun = $C['R-1'];
 		
 		$loadFile = 0;
 		$Dir = PATHS;
@@ -93,7 +93,7 @@ class Route{
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
 			}else{
-				Msg('错误的参数：'.$C['R']);
+				throw new \Exception('错误的参数：'.$C['R']);
 			}
 		}
 		
@@ -111,53 +111,22 @@ class Route{
 		if(!isset($_GET['R'])){
 			return false;
 		}
-		$C['R'] = trim($_GET['R'],'/ ');
-		$C['R'] = preg_replace('/\/\//', '/', $C['R']);
-		$R = explode('/',$C['R']);
+		$R = trim($_GET['R'],'/ ');
+		$R = preg_replace('/\/\//', '/', $R);
+		$R = explode('/',$R);
 		//R参数安全过滤只允许字母、数字、下划线、横杠
+		$i = 0;
 		foreach($R as $k => $value){
+			$i ++;
 			$value = urldecode(trim($value));
 			$value = preg_replace('/[^a-z0-9_\-]/i','',$value);
-			$R[$k] = $value ? $value : 'index';
-		}
-		for($i=0;$i<3;$i++){
-			if(!isset($R[$i])){
-				$R[$i] = 'index';
+			if($value){
+				$R[$k] = $value;
+				$rk = 'R-'.$i;
+				$C[$rk] = $value;
+				$C['MOD'][] = $value;
 			}
 		}
-		$C['M'] = isset($R[0]) && $R[0] ? $R[0] : self::DEF['M']; //模型 无请求默认
-		$C['O'] = isset($R[1]) && $R[1] ? $R[1] : self::DEF['O']; //功能 无请求默认
-		$C['D'] = isset($R[2]) && $R[2] ? $R[2] : self::DEF['D'];//动作 无请求默认
 		$C['R'] =  implode('/',$R);
-	}
-	
-	/**
-	 * 默认某个值
-	 * @global type $C
-	 * @param type $K 可传：M O D
-	 * @param type $str 对应值内容（只允许大小写+数字+下划线）
-	 * @return type
-	 */
-	public static function deft($K='', $str=NULL){
-		if(isset(self::DEF[$K])){
-			global $C;
-			if(!$C[$K] || $C[$K] === self::DEF[$K]){
-				return self::___set($K, $str);
-			}
-		}
-	}
-	
-	private function ___set($K='', $str=NULL){
-		if(in_array($K,['M','O','D'])){
-			global $C;
-			if($str !== NULL){
-				$str = preg_replace('/[^a-z0-9_]/','',$str);
-				if($str){
-					$C[$K] = $str;
-					$C['R'] =  $C['M'].'/'.$C['O'].'/'.$C['D'];
-				}
-			}
-			return $C[$K];
-		}
 	}
 }
