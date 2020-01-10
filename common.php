@@ -499,8 +499,12 @@ function Msg($msg='',$url='',$data=[]){
  */
 function JSON($dt,$g=[]){
 	global $C;
-	$user = $C['user'];
-	unset($user['mobile'],$user['password'],$user['salt']);
+	$user = [];
+	foreach($C['user'] as $key => $value){
+		if(in_array($key, ['uid','name','avatar'])){
+			$user[$key] = $value;
+		}
+	}
 	$dt = [
 		'uid' => $C['uid'],
 		'token' => $C['token'],
