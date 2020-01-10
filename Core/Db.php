@@ -570,6 +570,43 @@ class DB{
 		
 		return $ret;
 	}
+	
+	/**
+	 * 字段值修饰符过滤器
+	 * 修饰符(Modifier)：
+	 *	int=纯数字
+	 *	abc=纯字母
+	 *	intabc=纯数字或字母
+	 *	intabcs=纯数字、字母、下划线、横杠
+	 * @param string $key 带修饰符的字段 Modifier:field
+	 * @param string $value 字段值
+	 * @return array [key , value, Modifier]
+	 */
+	public function __safe($key='',$val=''){
+		$tp = 'string';
+		$n = strpos($key,':');
+		//如果字段名存在过滤修饰符
+		if($n>0){
+			$tp = substr($key, 0, $n);
+			$key = substr($key,$n+1);
+		}
+		$tp = strtolower($tp);
+		switch($tp){
+			case 'int': //纯数字
+				$val += 0; break;
+			case 'abc': //纯字母
+				$val = preg_replace('/[^a-z]/i','',$val); break;
+			case 'abcs': //纯字母、下划线、横杠
+				$val = preg_replace('/[^a-z-_]/i','',$val); break;
+			case 'intabc': //纯数字或字母
+				$val = preg_replace('/[^a-z0-9]/i','',$val); break;
+			case 'intabcs': //纯数字、字母、下划线、横杠
+				$val = preg_replace('/[^a-z0-9-_]/i','',$val); break;
+			default:
+				break;
+		}
+		return [$key, $val, $tp];
+	}
 
 	/**
 	 * 内部函数 where 字段二次格式化处理 统一格式化为 `a` = 'xx'
@@ -581,14 +618,7 @@ class DB{
 	 */
 	public function __field($field='', $val='', $glue = '=') {
 		$glue = $glue === false ? '=' : strtolower($glue);
-		$tp = 'string';
-		if(strpos($field,':') !== false){
-			list($tp,$field) = explode(':',$field);
-			$tp = strtolower($tp);
-		}
-		if($tp =='int'){
-			$val += ($val);
-		}
+		list($field, $val, $tp) = self::__safe($field,$val);
 		
 		//查询条件标准组合函数 外部使用
 		$field = self::__fieldQ($field);
