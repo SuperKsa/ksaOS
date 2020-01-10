@@ -310,6 +310,7 @@ class Service{
 		if($token){
 			User::isLogin($token);
 		}
+		$this->hook(__CLASS__ , __FUNCTION__ , 'end');
 		return $this;
 	}
 	
