@@ -437,6 +437,7 @@ class DB{
 			return $ret;
 		}
 		$this->tableLink();
+		
 		$ret = self::$DB->fetch_first($sql);
 		$this->__cache('set',$ret);//写缓存
 		
@@ -603,6 +604,10 @@ class DB{
 			case 'intabcs': //纯数字、字母、下划线、横杠
 				$val = preg_replace('/[^a-z0-9-_]/i','',$val); break;
 			default:
+				if($val){
+					$val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
+					$val = addslashes($val);
+				}
 				break;
 		}
 		return [$key, $val, $tp];
@@ -628,7 +633,7 @@ class DB{
 			$val = $v;
 			$isObj = 1;
 			unset($v);
-		}elseif($val === NULL){
+		}elseif(is_null($val) && $glue == '='){
 			$glue = 'null';
 		}
 		if (!$isObj && in_array($glue,['=','in','notin'])) {
@@ -689,7 +694,7 @@ class DB{
 					return $field.$s.'('.$val.')';
 				}
 			default:
-				throw new \Exception('系统不支持该类型的组合: '.$glue);
+				throw new \Exception('错误的SQL条件组合: '.$glue);
 		}
 	}
 	
@@ -711,42 +716,25 @@ class DB{
 			if (strpos($field, '`') !== false){
 				$field = str_replace('`', '', $field);
 			}
-			$field = ($as ? $as.'.' : '').'`' . $field . '`';
+			$field = ($as ? '`'.$as.'`.' : '').'`' . $field . '`';
 		}
 		return $field;
 	}
 
 	/**
 	 * 内部函数 字段值统一加引号 '
-	 * @param type $str
-	 * @param type $noarray
+	 * @param string $str
 	 * @return string
 	 */
-	public static function __valueQ($str='', $noarray = false) {
+	public static function __valueQ($str='') {
 		$strtype = gettype($str);
-		if ($strtype =='string'){
-			return '\'' . addslashes($str) . '\'';
-		}
-
-		if (in_array($strtype,['integer','double','float'])){
-			return '\'' . $str . '\'';
-		}
-		if($str === NULL){
+		if(is_string($str) || is_numeric($str)){
+			return '\''.$str. '\'';
+		}elseif($str === NULL){
 			return 'NULL';
-		}
-
-		if (is_array($str)) {
-			if($noarray === false) {
-				foreach ($str as &$v) {
-					$v = self::__valueQ($v, true);
-				}
-				return $str;
-			} else {
-				return '\'\'';
-			}
-		}
-
-		if (is_bool($str)){
+		}elseif (is_array($str)) {
+			return json_encode($str,JSON_UNESCAPED_UNICODE);
+		}elseif (is_bool($str)){
 			return $str ? '1' : '0';
 		}
 		return '\'\'';
