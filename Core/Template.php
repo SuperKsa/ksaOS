@@ -22,8 +22,8 @@ class template {
 		if(!$tplfile){
 			return;
 		}
-		$tplDir = $tplDir ? $tplDir : TPLDIR;
-		$cachedir = 'data/cache/template/';
+		$tplDir = $tplDir ? $tplDir.'/' : TPLDIR;
+		$cachedir = 'data/cache/template/'.$tplDir;
 		$cachedir = Files::dir(ROOT.$cachedir.$tplfile);
 		Files::mkdir($cachedir, 0777);
 		$tplName = Files::name($tplfile.'.php');
