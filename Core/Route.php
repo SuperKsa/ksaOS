@@ -56,24 +56,44 @@ class Route{
 		
 		$loadFile = 0;
 		$Dir = PATHS;
-		$R = explode('/',$C['R']);
+		$R = explode('/', strtolower($C['R']));
 		$Fun = count($R) >3 ? array_pop($R) : end($R);
 		$Loads = [];
-		$upValue = '';
+        $upDir = '';
+
+        foreach($R as $key => $value){
+            if($key >2){
+                unset($R[$key]);
+            }
+        }
+
 		foreach($R as $key => $value){
-			if(is_file($Dir.$upValue.$value.'.php')){
-				$Loads[] = $Dir.$upValue.$value.'.php';
-				include_once $Dir.$upValue.$value.'.php';
-				if($key == 0){
-					$Dir .= $ModelName.'/';
-				}
-				$Dir .= $value.'/';
-				$Class .= '_'.$value;
-				$upValue .= $value.'_';
+            if(is_dir($Dir)){
+                //前3层检查语言包/公共包
+                if($key <3) {
+                    //检测该目录下的语言包 并加载
+                    if (is_file($Dir . '_lang.php')) {
+                        $Loads[] = $Dir.'_lang.php';
+                    }
+                    //检测该目录下的公共文件 并加载
+                    if (is_file($Dir . '_common.php')) {
+                        $Loads[] = $Dir.'_common.php';
+                    }
+                }
+                if(is_file($Dir.$value.'.php')) {
+                    $Loads[] = $Dir.$value.'.php';
+
+                }
+                $Class .= '_'.ucfirst($value);
+                $Dir .= $value.'/';
 			}
 		}
 		$__M_FunInit = 0;
 		if($Loads){
+            foreach($Loads as $value){
+                include_once $value;
+            }
+
 			if(class_exists($Class,false)){
 				$OBJ = new $Class;
 			}
@@ -89,14 +109,14 @@ class Route{
 			if(!method_exists($OBJ, $Fun)){
 				$Fun = 'index';
 			}
-			if(method_exists($OBJ, $Fun)){
+			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
 			}else{
 				throw new \Exception('错误的参数：'.$C['R']);
 			}
 		}
-		
+
 		if(!$__M_FunInit){
 			throw new \Exception('错误的访问：'.$Class,404);
 		}
