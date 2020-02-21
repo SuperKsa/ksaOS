@@ -141,8 +141,14 @@ class DB{
 		return $this;
 	}
 	
-	private function _We($v){
+	private function _We($str){
 		$sql = '';
+        $args = func_get_args();
+		if(count($args) >1){
+		    $v = $args;
+        }else{
+		    $v = $str;
+        }
 		if(is_array($v)){
 			$c = count($v);
 			//[key , = , val]
@@ -365,17 +371,17 @@ class DB{
 		if(in_array($idef, ['update','insert','replace'])){
 			$sql[] = 'SET {%idef%}';
 		}
-		
+
 		//update select delete三种模式才能使用where
-		if(in_array($idef, ['select', 'update', 'delete'])){
-			$sql[] = $this->__where ? 'WHERE '.implode(' AND ',$this->__where) : '';
+		if(in_array($idef, ['select', 'update', 'delete']) && $this->__where){
+			$sql[] = 'WHERE '.implode(' AND ',$this->__where);
 		}
 		if($idef =='select'){
 			$sql[] = $this->order ? 'ORDER BY '.implode(', ',$this->order) : '';
 			$sql[] = $this->group ? 'GROUP BY '.implode(', ',$this->group) : '';
 		}
-		if(in_array($idef, ['select', 'delete'])){
-			$sql[] = $this->limits ? 'LIMIT '.implode(',',$this->limits) : '';
+		if(in_array($idef, ['select', 'delete']) && $this->limits){
+			$sql[] = 'LIMIT '.implode(',',$this->limits);
 		}
 		$sql = array_filter($sql);
 		$sql = implode(' ',$sql);
@@ -611,7 +617,7 @@ class DB{
 			default:
 				if($val){
 					$val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
-					$val = addslashes($val);
+					$val = caddslashes($val);
 				}
 				break;
 		}
@@ -628,11 +634,13 @@ class DB{
 	 */
 	public function __field($field='', $val='', $glue = '=') {
 		$glue = $glue === false ? '=' : strtolower($glue);
+
 		list($field, $val, $tp) = self::__safe($field,$val);
-		
+
 		//查询条件标准组合函数 外部使用
 		$field = self::__fieldQ($field);
 		$isObj = 0;
+
 		if(is_object($val)){
 			$v = $val();
 			$val = $v;
@@ -641,6 +649,7 @@ class DB{
 		}elseif(is_null($val) && $glue == '='){
 			$glue = 'null';
 		}
+
 		if (!$isObj && in_array($glue,['=','in','notin'])) {
 			if(is_array($val)){
 				if(count($val) ==1){
@@ -653,7 +662,7 @@ class DB{
 				$glue = '=';
 			}
 		}
-		
+
 		switch (true) {
 			case (in_array($glue, ['=','>','<','<>','<=','>=','!='])):
 				return $field.$glue.self::__valueQ($val);
@@ -695,7 +704,7 @@ class DB{
 				if($isObj){
 					return $field.$s.'('.$val.')';
 				}else{
-					$val = $val ? implode(',', self::__valueQ($val)) : '\'\'';
+					$val = $val ? "'".implode("','", $val)."'" : '\'\'';
 					return $field.$s.'('.$val.')';
 				}
 			default:
@@ -732,7 +741,6 @@ class DB{
 	 * @return string
 	 */
 	public static function __valueQ($str='') {
-		$strtype = gettype($str);
 		if(is_string($str) || is_numeric($str)){
 			return '\''.$str. '\'';
 		}elseif($str === NULL){
