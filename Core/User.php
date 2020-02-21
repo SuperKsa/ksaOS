@@ -57,7 +57,7 @@ class User{
 	}
 	
 	/**
-	 * 用户登录判断 - 前端
+	 * 用户登录(登录成功，写cookie：token并返回token串)
 	 * @global type $C
 	 * @param type $user 用户原始信息
 	 * @param type $account 登录帐号
@@ -76,6 +76,7 @@ class User{
 				$C['user'] = $user;
 				$C['uid'] = $user['uid'];
 				$C['token'] = $token;
+				DB('user_status')->where('uid',$user['uid'])->update(['loginIP'=>$C['IP'],'loginPort'=>$C['port'],'loginDate'=>time(),'lastIP'=>$C['IP'],'lastPort'=>$C['port'],'lastDate'=>time()]);
 				return $user;
 			}
 		}
