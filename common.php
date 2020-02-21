@@ -104,6 +104,9 @@ function ACA($Origin='*', $Methods='GET, POST, PATCH, PUT, DELETE',$Headers='*')
 function debug($value=NULL,$dump=0){
 	APP::debug()->debug($value, $dump);
 }
+function debugs(){
+    APP::debug()->debug(debug_backtrace());
+}
 
 /**
  * 重写trims 使其支持数组
