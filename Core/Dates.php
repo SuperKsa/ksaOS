@@ -77,9 +77,12 @@ class Dates{
 	 * @return date
 	 */
 	public static function times($timestamp=0,$format= 'Y-m-d H:i:s', $isUTC=0){
-		if(!$timestamp){
+		if($timestamp ===0){
 			$timestamp = time();
-		}
+		}elseif(is_null($timestamp)){
+		    return '';
+        }
+
 		$s = '';
 		$strlen = strlen($timestamp);
 		//时间戳存在毫/微秒级处理
