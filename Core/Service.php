@@ -396,6 +396,9 @@ class Service{
      * @throws \Exception
      */
     public static function tpl($tpl){
+        $tpl = explode('/',$tpl);
+        $tpl[] = 'tpl_'.array_pop($tpl);
+        $tpl = implode('/',$tpl);
         $dir = '';
         foreach(debug_backtrace() as $value){
             if($value['function'] == __FUNCTION__ && $value['args'][0] == $tpl){
@@ -404,6 +407,6 @@ class Service{
         }
         $dir = Files::dir($dir).'template/';
         $Class = new template();
-        return $Class->replace('tpl_'.$tpl, $dir);
+        return $Class->replace($tpl, $dir);
     }
 }
