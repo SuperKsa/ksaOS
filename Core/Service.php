@@ -383,8 +383,27 @@ class Service{
 			return new Cache();
 		}
 	}
+
 	public static function template($file='',$tplDir=''){
 		$Class = new template();
 		return $Class->replace($file, $tplDir);
 	}
+
+    /**
+     * 加载引用此函数文件相同目录下的template模板文件
+     * @param $tpl 模板名（必须命名为tpl_$tpl.php）
+     * @return fileName 返回模板文件路径
+     * @throws \Exception
+     */
+    public static function tpl($tpl){
+        $dir = '';
+        foreach(debug_backtrace() as $value){
+            if($value['function'] == __FUNCTION__ && $value['args'][0] == $tpl){
+                $dir = str_replace(ROOT,'',$value['file']);
+            }
+        }
+        $dir = Files::dir($dir).'template/';
+        $Class = new template();
+        return $Class->replace('tpl_'.$tpl, $dir);
+    }
 }
