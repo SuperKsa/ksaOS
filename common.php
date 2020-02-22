@@ -177,15 +177,6 @@ function creferer($default = '/') {
 }
 
 /**
- * 加载指定模板文件
- * @param type $file 模板文件路径(template目录下路径，无需后缀)
- * @return type
- */
-function template($file=''){
-	return APP::template($file);
-}
-
-/**
  * 将时间戳格式化为日期格式
  * @param Number $timestamp 10位时间戳
  * @param String $format 格式(Y-m-d H:i:s)
