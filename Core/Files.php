@@ -22,10 +22,10 @@ class Files{
 	 * 主要处理路径中:
 	 *	非首次出现的 ./ (如././aa/./)
 	 *	所有的 ../ (如 ../aa/../)
-	 * @param path $path 需要格式化的路径地址
-	 * @return path
+	 * @param string $path 需要格式化的路径地址
+	 * @return string
 	 */
-	public static function path($path){
+	public static function path($path=''){
 		if(strpos($path,'\\') !== false){
 			$path = str_replace('\\','/',$path);
 		}
@@ -35,13 +35,17 @@ class Files{
 		if(strpos($path, '//') !== false || strpos($path, '../') !== false || strpos($path, '..') !== false){
 			$path = path($path);
 		}
-		return $path;
+		if($path){
+            $path = rtrim($path,'/').'/';
+            return $path;
+        }
+		return NULL;
 	}
 	
 	/**
 	 * 目录创建函数
-	 * @param type $dir 需要创建的路径 如果没有则一直创建至末端目录
-	 * @param type $mode
+	 * @param string $dir 需要创建的路径 如果没有则一直创建至末端目录
+	 * @param string $mode
 	 * @return boolean
 	 */
 	public static function mkdir(string $dir, $mode = 0777){
@@ -55,9 +59,9 @@ class Files{
 	/**
 	 * 返回路径中的目录路径
 	 * @param string $dir 路径地址（可以包含文件）
-	 * @return boolean/path 返回目录路径 最后有/
+	 * @return boolean 返回目录路径 最后有/
 	 */
-	public static function dir(string $dir=''){
+	public static function dir($dir=''){
 		if($dir){
 			$d = pathinfo($dir);
 			if($d['dirname']){
@@ -95,11 +99,11 @@ class Files{
 	
 	/**
 	 * 获取指定目录下的文件列表
-	 * @param type $path 绝对路径
+	 * @param string $path 绝对路径
 	 * @param array/string $ext 搜索规则(字符限制：a-z0-9_-*.) 如：'php' || 'js' || 'a_*.php' || ['a_*.php','a_*_list.php','js','css']
 	 * @return array 文件名和目录名数组（仅名称不带路径）
 	 */
-	public static function dirs($path,$ext=[]){
+	public static function dirs($path='',$ext=[]){
 		$ext = $ext ? $ext : ['*'];
 		if(!is_array($ext)){
 			$ext = [$ext];
@@ -132,20 +136,28 @@ class Files{
 		}
 		return '';
 	}
-	
-	/**
-	 * 获取文件名中的后缀名
-	 * @param type $file 文件名或路径
-	 * @return ext 成功返回后缀名（小写）
-	 */
-	public static function ext($file){
-		$ext = end(explode('.',$file));
-		$ext = strtolower($ext);
-		//后缀名只支持字母与数字
-		if(!preg_match('/[^a-z0-9]/', $ext)){
-			return $ext;
-		}
-		return NULL;
+
+    /**
+     * 获取文件名中的后缀名
+     * @param string $file 获取文件名中的后缀名
+     * @param int $remove 移除后缀（1=是 0=否） 默认=0
+     * @return string 返回后缀名或者file
+     */
+	public static function Ext($file='', $remove=0){
+	    if($file) {
+            if ($remove) {
+                $file = explode('.', $file);
+                array_pop($file);
+                return implode('', $file);
+            } else {
+                $ext = end(explode('.', $file));
+                $ext = strtolower($ext);
+                //后缀名只支持字母与数字
+                if (!preg_match('/[^a-z0-9]/', $ext)) {
+                    return $ext;
+                }
+            }
+        }
 	}
 	
 	/**
