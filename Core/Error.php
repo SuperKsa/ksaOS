@@ -122,9 +122,9 @@ class Error {
 				JSON($Msg,['msg'=>$Msg,'success'=>0,'locationUrl'=>'./']);
 			}
 			if($errorCode == '404'){
-				include APP::Template('Core/tpl/404', KSAOS);
+				include template::show('404',KSAOS.'Core/tpl/');
 			}else{
-				include APP::Template('Core/tpl/_error', KSAOS);
+				include template::show('error',KSAOS.'Core/tpl/');
 			}
 		}
 		exit;

@@ -19,22 +19,43 @@ class template {
 	private $file = '';
 
 	static function show($tpl='',$dir=''){
-        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $fname = Files::name($sys[0]['file'], false);
-        if(!$dir){
-            $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
-            $dir .= 'template/';
-        }
-        if($tpl){
-            $tpl = explode('/',$tpl);
-            $tpl[] = 'tpl_'.array_pop($tpl);
-            $tpl = implode('/',$tpl);
-        }else{
-            $tpl = 'tpl_'.$fname.'_'.$sys[1]['function'];
-        }
+	    if(!$dir || !$tpl){
+            $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 
+            if(!$dir){
+                $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
+                $dir .= 'template/';
+            }
+            if(!$tpl){
+                $fname = Files::name($sys[0]['file'], false);
+                $tpl = $fname.'_'.$sys[1]['function'];
+            }
+        }
         $new = new self();
         return $new->replace($tpl, $dir);
+    }
+
+
+    /**
+     * 内部引用函数 模板文件内部{template xx}
+     * @param  string  $tpl
+     *
+     * @return string|void
+     * @throws \Exception
+     */
+    static function subshow($tpl=''){
+        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $dir = Files::dir($sys[1]['file']);
+        $dir = explode('/',$dir);
+        foreach($dir as $k => $v){
+            if($k >1){
+                unset($dir[$k]);
+            }
+        }
+        $dir = implode('/',$dir);
+
+        $new = new self();
+        return $new->replace($tpl, $dir.'/template');
     }
 
 	public function replace($tplfile='',$tplDir='') {
@@ -50,9 +71,15 @@ class template {
 		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
 			$tplfile = $tplfile.'_ajax';
 		}
-		
+        if($tplfile){
+            $tplfile = explode('/',$tplfile);
+            $tplfile[] = 'tpl_'.array_pop($tplfile);
+            $tplfile = implode('/',$tplfile);
+        }
+
 		$tplfile = $tplDir.$tplfile.'.php';
-		if(!is_file($tplfile)){
+
+        if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在：'.str_replace(ROOT,'',$tplfile));
 		}
 
@@ -159,7 +186,7 @@ class template {
 	private function tpltag($str){
 		$i = count($this->replacecode['search']);
 		$this->replacecode['search'][$i] = $search = '<!--TEMPLATE_TAG_'.$i.'-->';
-		$this->replacecode['replace'][$i] = '<?php @include APP::Tpl(\''.$str.'\'); ?>';
+		$this->replacecode['replace'][$i] = '<?php @include template::subshow(\''.$str.'\'); ?>';
 		return $search;
 	}
 
