@@ -145,8 +145,8 @@ class Service{
 	 */
 	private function _setDefine(){
 		
-		//模板目录绝对路径
-		define('TPLDIR', ROOT.$this->config['TPLDIR']);
+		//模板目录名称
+		define('TPLDIR', $this->config['TPLDIR'].'/');
 		//是否是windows服务器
 		define('ISWIN', strpos(strtolower(php_uname()),'windows') !== false ? true : false);
 		//常量 HTTPS状态
@@ -395,6 +395,7 @@ class Service{
      * @return fileName 返回模板文件路径
      * @throws \Exception
      */
+    /*
     public static function tpl($tpl=''){
         $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
         $dir = Files::dir($sys[1]['file']);
@@ -407,4 +408,5 @@ class Service{
         $dir = implode('/',$dir);
         return template::show($tpl, $dir.'/template/');
     }
+    */
 }
