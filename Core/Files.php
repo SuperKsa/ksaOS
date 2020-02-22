@@ -60,7 +60,9 @@ class Files{
 	public static function dir(string $dir=''){
 		if($dir){
 			$d = pathinfo($dir);
-			return $d['dirname'].'/';
+			if($d['dirname']){
+			    return str_replace(ROOT,'',$d['dirname']).'/';
+            }
 		}
 		return false;
 	}
