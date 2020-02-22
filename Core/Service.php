@@ -396,16 +396,17 @@ class Service{
      * @throws \Exception
      */
     public static function tpl($tpl){
-        $tpl = explode('/',$tpl);
-        $tpl[] = 'tpl_'.array_pop($tpl);
-        $tpl = implode('/',$tpl);
-        $dir = '';
-        foreach(debug_backtrace() as $value){
-            if($value['function'] == __FUNCTION__ && $value['args'][0] == $tpl){
-                $dir = str_replace(ROOT,'',$value['file']);
-            }
+        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
+        $dir .= 'template/';
+        if($tpl){
+            $tpl = explode('/',$tpl);
+            $tpl[] = 'tpl_'.array_pop($tpl);
+            $tpl = implode('/',$tpl);
+        }else{
+            $tpl = $sys[1]['function'];
         }
-        $dir = Files::dir($dir).'template/';
+
         $Class = new template();
         return $Class->replace($tpl, $dir);
     }
