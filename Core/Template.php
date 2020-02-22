@@ -18,21 +18,28 @@ class template {
 	private $replacecode = ['search' => [], 'replace' => []];
 	private $file = '';
 
-	static function show($tpl='',$dir=''){
+	static function show($tpl='',$dir='', $DirName=''){
 	    if(!$dir || !$tpl){
             $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-
+            //未指定模板目录时 自动默认为入口文件名相同的目录
             if(!$dir){
-                $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
-                $dir .= 'template/';
+                //获取加载当前函数的文件
+                $file = str_replace(ROOT,'', $sys[0]['file']);
+                //去掉后缀
+                $dir = Files::dir($file);
+                if($dir =='App/'){
+                    $dir = Files::ext($file,1);
+                }
+                //路径格式化
+                $dir = Files::path($dir);
             }
             if(!$tpl){
                 $fname = Files::name($sys[0]['file'], false);
                 $tpl = $fname.'_'.$sys[1]['function'];
             }
         }
-        $new = new self();
-        return $new->replace($tpl, $dir);
+
+        return self::replace($tpl, $dir, $DirName);
     }
 
 
@@ -40,49 +47,75 @@ class template {
      * 内部引用函数 模板文件内部{template xx}
      * @param  string  $tpl
      *
-     * @return string|void
-     * @throws \Exception
+     * @return string
      */
     static function subshow($tpl=''){
-        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+
+        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+
         $dir = Files::dir($sys[1]['file']);
+        $dir = Files::path($dir);
+
         $dir = explode('/',$dir);
         foreach($dir as $k => $v){
             if($k >1){
                 unset($dir[$k]);
             }
         }
-        $dir = implode('/',$dir);
-        $new = new self();
-        return $new->replace($tpl, $dir.'/template');
+        $dir = implode('/',$dir).'/';
+        //如果起始目录不是APP 则将目录定位到APP目录
+        if(substr($dir,0,4) != 'App/'){
+            $dir = PATHS;
+        }
+        return self::replace($tpl, $dir);
     }
 
-	public function replace($tplfile='',$tplDir='') {
+    /**
+     * 模板引擎处理函数 自动实例化
+     * 注意：渲染失败直接报错
+     * @param string $tplfile 模板文件名（传入无需带tpl_前缀 但文件名必须要带前缀）
+     * @param string $tplDir 自定义模板缓存目录 不传入时默认为:APP/模板目录名/
+     * @param string $DirName 自定义模板目录名称 不传入默认为config配置参数TPLDIR
+     * @return string 渲染成功返回渲染后的文件地址（绝对路径）
+     */
+    public static function replace($tplfile='',$tplDir='',$DirName='') {
+        if(is_object($this)){
+            $new = $this;
+        }else{
+            $new = new self();
+        }
+        return $new->__replace($tplfile, $tplDir, $DirName);
+    }
+
+
+	private function __replace($tplfile='',$tplDir='',$DirName='', $returnCode=false) {
+
 		if(!$tplfile){
 			return;
 		}
+        //模板目录名称处理
+        $DirName = $DirName ? $DirName.'/' :TPLDIR;
 
         if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
             $tplfile = $tplfile.'_ajax';
         }
+        //模板文件名统一前缀为tpl_
         if($tplfile){
             $tplfile = explode('/',$tplfile);
             $tplfile[] = 'tpl_'.array_pop($tplfile);
             $tplfile = implode('/',$tplfile);
         }
+		$tplDir = ($tplDir ? $tplDir : 'APP/').$DirName;
 
-		$tplDir = $tplDir ? $tplDir : TPLDIR;
         $tplfile = $tplfile.'.php';
-
-		$cachedir = 'data/cache/template/'.$tplDir;
-		$cachedir = Files::dir(ROOT.$cachedir.$tplfile);
+		$cachedir = Files::dir('data/cache/'.$DirName.$tplDir.$tplfile);
 		//创建缓存目录
-		Files::mkdir($cachedir, 0777);
+		Files::mkdir(ROOT.$cachedir, 0777);
 		$tplName = Files::name($tplfile);
+
 		$cachefile = $cachedir.$tplName;
 
 		$tplfile = $tplDir.$tplfile;
-
         if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在：'.str_replace(ROOT,'',$tplfile));
 		}

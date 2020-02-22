@@ -481,7 +481,7 @@ function Msg($msg='',$url='',$data=[]){
 	if($C['ajax']){
 		JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
 	}else{
-		include template::show('common/msg', TPLDIR);
+		include template::show('common/msg', PATHS);
 	}
 	exit;
 }
