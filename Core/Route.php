@@ -57,7 +57,8 @@ class Route{
 		$loadFile = 0;
 		$Dir = PATHS;
 		$R = explode('/', strtolower($C['R']));
-		$Fun = count($R) >3 ? array_pop($R) : end($R);
+		$Rn = count($R);
+		$Fun = $Rn >3 ? array_pop($R) : end($R);
 		$Loads = [];
         $upDir = '';
 
@@ -66,8 +67,12 @@ class Route{
                 unset($R[$key]);
             }
         }
-
+        //如果路由参数小于3个 则用index补充为固定三个
+        for($i=0; $i<3-$Rn; $i++){
+            $R[] = 'index';
+        }
 		foreach($R as $key => $value){
+
             if(is_dir($Dir)){
                 //前3层检查语言包/公共包
                 if($key <3) {
@@ -82,9 +87,13 @@ class Route{
                 }
                 if(is_file($Dir.$value.'.php')) {
                     $Loads[] = $Dir.$value.'.php';
-
                 }
                 $Class .= '_'.ucfirst($value);
+                //第一层如果找不到目录则在model目录下查找
+                if($key ===0 && !is_dir($Dir.$value)){
+                    $Dir .= 'model/';
+                }
+
                 $Dir .= $value.'/';
 			}
 		}
@@ -109,6 +118,7 @@ class Route{
 			if(!method_exists($OBJ, $Fun)){
 				$Fun = 'index';
 			}
+
 			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
