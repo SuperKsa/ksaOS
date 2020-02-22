@@ -53,7 +53,6 @@ class template {
             }
         }
         $dir = implode('/',$dir);
-
         $new = new self();
         return $new->replace($tpl, $dir.'/template');
     }
@@ -62,22 +61,27 @@ class template {
 		if(!$tplfile){
 			return;
 		}
-		$tplDir = $tplDir ? $tplDir.'/' : TPLDIR;
-		$cachedir = 'data/cache/template/'.$tplDir;
-		$cachedir = Files::dir(ROOT.$cachedir.$tplfile);
-		Files::mkdir($cachedir, 0777);
-		$tplName = Files::name($tplfile.'.php');
-		$cachefile = $cachedir.$tplName;
-		if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
-			$tplfile = $tplfile.'_ajax';
-		}
+
+        if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
+            $tplfile = $tplfile.'_ajax';
+        }
         if($tplfile){
             $tplfile = explode('/',$tplfile);
             $tplfile[] = 'tpl_'.array_pop($tplfile);
             $tplfile = implode('/',$tplfile);
         }
 
-		$tplfile = $tplDir.$tplfile.'.php';
+		$tplDir = $tplDir ? $tplDir : TPLDIR;
+        $tplfile = $tplfile.'.php';
+
+		$cachedir = 'data/cache/template/'.$tplDir;
+		$cachedir = Files::dir(ROOT.$cachedir.$tplfile);
+		//创建缓存目录
+		Files::mkdir($cachedir, 0777);
+		$tplName = Files::name($tplfile);
+		$cachefile = $cachedir.$tplName;
+
+		$tplfile = $tplDir.$tplfile;
 
         if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在：'.str_replace(ROOT,'',$tplfile));

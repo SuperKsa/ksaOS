@@ -405,6 +405,6 @@ class Service{
             }
         }
         $dir = implode('/',$dir);
-        return template::show($tpl, $dir.'/template');
+        return template::show($tpl, $dir.'/template/');
     }
 }
