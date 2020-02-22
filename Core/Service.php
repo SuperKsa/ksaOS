@@ -395,19 +395,16 @@ class Service{
      * @return fileName 返回模板文件路径
      * @throws \Exception
      */
-    public static function tpl($tpl){
-        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
-        $dir .= 'template/';
-        if($tpl){
-            $tpl = explode('/',$tpl);
-            $tpl[] = 'tpl_'.array_pop($tpl);
-            $tpl = implode('/',$tpl);
-        }else{
-            $tpl = $sys[1]['function'];
+    public static function tpl($tpl=''){
+        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $dir = Files::dir($sys[1]['file']);
+        $dir = explode('/',$dir);
+        foreach($dir as $k => $v){
+            if($k >1){
+                unset($dir[$k]);
+            }
         }
-
-        $Class = new template();
-        return $Class->replace($tpl, $dir);
+        $dir = implode('/',$dir);
+        return template::show($tpl, $dir.'/template');
     }
 }

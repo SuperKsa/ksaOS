@@ -18,6 +18,25 @@ class template {
 	private $replacecode = ['search' => [], 'replace' => []];
 	private $file = '';
 
+	static function show($tpl='',$dir=''){
+        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $fname = Files::name($sys[0]['file'], false);
+        if(!$dir){
+            $dir = str_replace(ROOT,'', Files::dir($sys[0]['file']));
+            $dir .= 'template/';
+        }
+        if($tpl){
+            $tpl = explode('/',$tpl);
+            $tpl[] = 'tpl_'.array_pop($tpl);
+            $tpl = implode('/',$tpl);
+        }else{
+            $tpl = 'tpl_'.$fname.'_'.$sys[1]['function'];
+        }
+
+        $new = new self();
+        return $new->replace($tpl, $dir);
+    }
+
 	public function replace($tplfile='',$tplDir='') {
 		if(!$tplfile){
 			return;
@@ -36,7 +55,7 @@ class template {
 		if(!is_file($tplfile)){
 			throw new \Exception('模板文件不存在：'.str_replace(ROOT,'',$tplfile));
 		}
-		
+
 		if(is_file($cachefile)){
 			$file_time = filemtime($tplfile);
 			//提取缓存文件最后修改时间做比对 如果缓存的修改时间与当前模板修改时间相同，则不做更新处理
@@ -50,7 +69,7 @@ class template {
 			unset($cache_template, $temp);
 			//End
 		}
-		
+
 		$this->file = $tplfile;
 		
 		$Code = file_get_contents($tplfile);
@@ -140,7 +159,7 @@ class template {
 	private function tpltag($str){
 		$i = count($this->replacecode['search']);
 		$this->replacecode['search'][$i] = $search = '<!--TEMPLATE_TAG_'.$i.'-->';
-		$this->replacecode['replace'][$i] = '<?php @include template(\''.$str.'\'); ?>';
+		$this->replacecode['replace'][$i] = '<?php @include APP::Tpl(\''.$str.'\'); ?>';
 		return $search;
 	}
 
