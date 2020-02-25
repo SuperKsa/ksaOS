@@ -54,6 +54,24 @@ class APP extends Service{
 		self::$memory->close();
 		self::$DB->close();
 	}
+
+    /**
+     * 全局提示类
+     * @param string $msg 提示信息
+     * @param url $url 需要跳转的URL （为空时代表错误等级提示）
+     * @param array $data 补充需要输出的数组
+     */
+    public static function Msg($msg='',$url='',$data=[]){
+        global $C;
+
+        $success = $url ? 1 : ($data['success'] ? $data['success'] : 0);
+        if($C['ajax']){
+            JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
+        }else{
+            include template::show('msg', PATHS);
+        }
+        exit;
+    }
 	
 	/**
 	 * 静态初始化本类

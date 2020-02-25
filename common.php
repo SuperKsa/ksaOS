@@ -31,10 +31,9 @@ function loadFile($file){
  * CSS文件自动加载并转换为H5
  * @param type $file
  */
-function CSSLOAD($file){
+function CSSLOAD($file='',$px=100){
 	global $C;
 	$src = $file;
-	/*
 	$fileName = end(explode('/',$file));
 	$newfileName = substr($fileName,0,-4).'_auto'.substr($fileName,-4);
 	$S = '';
@@ -46,7 +45,7 @@ function CSSLOAD($file){
 			if($a['1']){
 				$x = intval($a['1']);
 				if($x >1){
-					$x = $x / 100;
+					$x = $x / $px;
 					$r = $x.'rem';
 				}
 			}
@@ -54,9 +53,8 @@ function CSSLOAD($file){
 		},$code);
 		file_put_contents(ROOT.$src,$code);
 	}
-	*/
-	$S = '?S='.TIME;
-	return '<link rel="stylesheet" type="text/css" href="'.$C['staticUrl'].$src.$S.'" />';
+	$S = '?S='.time();
+	return $C['staticUrl'].'static/css/'.$src.$S;
 }
 
 /**
@@ -468,23 +466,7 @@ function bytes($val=0) {
 	return $val;
 }
 
-/**
- * 全局提示类
- * @param string $msg 提示信息
- * @param url $url 需要跳转的URL （为空时代表错误等级提示）
- * @param array $data 补充需要输出的数组
- */
-function Msg($msg='',$url='',$data=[]){
-	global $C;
 
-	$success = $url ? 1 : ($data['success'] ? $data['success'] : 0);
-	if($C['ajax']){
-		JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
-	}else{
-		include template::show('common/msg', PATHS);
-	}
-	exit;
-}
 
 /**
  * 输出json数据
