@@ -54,24 +54,24 @@ class Wechat {
      * 获取JS-SDK签名
      * @return mixed|string
      */
-    static function wechat_getJsapi_ticket(){
+    static function getJsapi_ticket(){
         global $C;
         $access_token = self::AccessToken();
-        $ticketData = json_decode($C['setting']['wechat_ticketData'],true);
+        $ticketData = Cache('WX_TicketData');
+        $ticketData = $ticketData ? json_decode($ticketData,true) : [];
         $ticket = $ticketData ? $ticketData['ticket'] : '';
         $outTime = intval($ticketData['expires_in']); //有效期
         $outTime = $outTime && $outTime < 7200 ? $outTime : 7200; //过期时间
         $dateline = intval($ticketData['dateline']); //缓存时间
-        //如果token未过期
-        if(!$ticket || $dateline + $outTime < TIME){
-            //拿用户access_token
-            $curl = curl('https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token='.$access_token.'&type=jsapi');
+        //如果token过期 则重新获取
+        if(!$ticket || $dateline + $outTime < time()){
+            $curl = Curls::send('https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token='.$access_token.'&type=jsapi');
             $data = $curl['data'] ? json_decode($curl['data'], true) : [];
             if($data['ticket']){
-                $data['dateline'] = TIME;
+                $data['dateline'] = time();
                 $C['setting']['wechat_ticketData'] = $data;
                 $ticket = $data['ticket'];
-                DB('setting')->update(['wechat_ticketData'=>json_encode($data)]);
+                Cache('WX_TicketData',$data);
             }
         }
 
@@ -83,17 +83,17 @@ class Wechat {
      * @param bool $ismd5 是否以MD5方式加密sign 默认=否
      * @return array
      */
-    function wechat_JsSign($ismd5=false){
+    static function JsSign($ismd5=false){
         global $C;
-        $jsapi_ticket = wechat_getJsapi_ticket();
+        $jsapi_ticket = self::getJsapi_ticket();
 
         $url = $C['siteurl'].ltrim($_SERVER['REQUEST_URI'],'/');
 
         //$dt KEY顺序必须按照A-Z排列
         $dt = [
             'jsapi_ticket' => $jsapi_ticket,
-            'noncestr' => crand(20),
-            'timestamp' => TIME,
+            'noncestr' => rands(20),
+            'timestamp' => time(),
             'url' => $url,
         ];
         $sign = [];

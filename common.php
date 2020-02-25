@@ -31,30 +31,31 @@ function loadFile($file){
  * CSS文件自动加载并转换为H5
  * @param type $file
  */
-function CSSLOAD($file='',$px=100){
+function CSSLOAD($file=''){
 	global $C;
 	$src = $file;
 	$fileName = end(explode('/',$file));
 	$newfileName = substr($fileName,0,-4).'_auto'.substr($fileName,-4);
-	$S = '';
+
 	$src = str_replace($fileName,$newfileName,$file);
 	if(!is_file(ROOT.$src) || filemtime(ROOT.$src) < filemtime(ROOT.$file)){
 		$code = file_get_contents(ROOT.$file);
 		$code = preg_replace_callback('/([0-9]+)px/', function($a){
-			$r = $a['0'];
-			if($a['1']){
-				$x = intval($a['1']);
+		    $r = $a[0];
+			if($a[1]){
+				$x = intval($a[1]);
 				if($x >1){
-					$x = $x / $px;
+					$x = $x / 100;
 					$r = $x.'rem';
 				}
 			}
 			return $r;
 		},$code);
+
 		file_put_contents(ROOT.$src,$code);
 	}
 	$S = '?S='.time();
-	return $C['staticUrl'].'static/css/'.$src.$S;
+	return $C['staticUrl'].$src.$S;
 }
 
 /**
