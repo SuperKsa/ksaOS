@@ -19,31 +19,32 @@ class Wechat {
 
     /**
      * 获取微信基础 access_token
+     * 缓存有效期 7200秒
      */
     static function AccessToken(){
         global $C;
 
-        $APPID = $C['setting']['wechat_APPID'];
-        $AppSecret = $C['setting']['wechat_AppSecret'];
+        $APPID = $C['setting']['WX_APPID'];
+        $AppSecret = $C['setting']['WX_AppSecret'];
+        $accessToken = Cache('WX_ACCESSTOKEN');
+        $accessToken = $accessToken ? json_decode($accessToken,true) : [];
 
-        $wechat_accessTokenData = json_decode($C['setting']['wechat_accessTokenData'],true);
-        $access_token = $wechat_accessTokenData['access_token'];
-        $access_token_time = intval($wechat_accessTokenData['dateline']); //token缓存时间
-        $outTime = intval($wechat_accessTokenData['expires_in']); //token有效期
+        $outTime = intval($accessToken['expires_in']); //token有效期
         $outTime = $outTime && $outTime < 7200 ? $outTime : 7200; //token过期时间
+        $access_token_time = intval($accessToken['dateline']); //token缓存时间
+        $access_token = $accessToken['access_token'];
 
         if(!$APPID || !$AppSecret){
             return ;
         }
         //如果token未过期
         if($access_token_time + $outTime < TIME || !$access_token){
-            $curl = curl('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid='.$APPID.'&secret='.$AppSecret);
+            $curl = Curls::send('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid='.$APPID.'&secret='.$AppSecret);
             $data = $curl['data'] ? json_decode($curl['data'], true) : [];
             if($data['access_token']){
-                $data['dateline'] = TIME;
-                $C['setting']['wechat_accessTokenData'] = $data;
+                $data['dateline'] = time();
+                Cache('WX_ACCESSTOKEN',$data);
                 $access_token = $data['access_token'];
-                DB('setting')->update(['wechat_accessTokenData'=>json_encode($data)]);
             }
         }
         return $access_token;
@@ -102,7 +103,7 @@ class Wechat {
         $sign = implode('&',$sign);
         $dt['sign'] = $ismd5 ? md5($sign) : sha1($sign);
         unset($dt['jsapi_ticket']);
-        $dt['appid'] = $C['setting']['wechat_APPID'];
+        $dt['appid'] = $C['setting']['WX_APPID'];
         return $dt;
     }
 
@@ -115,17 +116,18 @@ class Wechat {
         global $C;
         $access_token = self::AccessToken();
 
-        $APPID = $C['setting']['wechat_APPID'];
-        $AppSecret = $C['setting']['wechat_AppSecret'];
+        $APPID = $C['setting']['WX_APPID'];
+        $AppSecret = $C['setting']['WX_AppSecret'];
+
         //拿用户access_token
-        $curl = curl('https://api.weixin.qq.com/sns/oauth2/access_token?appid='.$APPID.'&secret='.$AppSecret.'&code='.$code.'&grant_type=authorization_code');
+        $curl = Curls::send('https://api.weixin.qq.com/sns/oauth2/access_token?appid='.$APPID.'&secret='.$AppSecret.'&code='.$code.'&grant_type=authorization_code');
         $data = $curl['data'] ? json_decode($curl['data'], true) : [];
         $token = $data['access_token'] ? $data['access_token'] : '';
         $openid = $data['openid'] ? $data['openid'] : '';
         $dt = [];
         //根据token 拿用户资料
         if($token && $openid){
-            $dt = curl('https://api.weixin.qq.com/sns/userinfo?access_token='.$token.'&openid='.$openid.'&lang=zh_CN');
+            $dt = Curls::send('https://api.weixin.qq.com/sns/userinfo?access_token='.$token.'&openid='.$openid.'&lang=zh_CN');
             $dt = $dt['data'] ? json_decode($dt['data'], true) : [];
         }
         return $dt;
@@ -137,7 +139,7 @@ class Wechat {
      * @param string $orderCode 系统内部订单编号
      * @param string $str
      */
-    function wechat_pay_api_order($userOpenid,$orderCode='',$total=0,$strbody='',$callbackUrl=''){
+    static function wechat_pay_api_order($userOpenid,$orderCode='',$total=0,$strbody='',$callbackUrl=''){
         global $C;
         $APIURL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
         //回调地址
@@ -170,9 +172,9 @@ class Wechat {
                 $post['openid'] = $userOpenid;
             }
 
-            $post = wechat_pay_sign($post);
+            $post = self::pay_sign($post);
             $returnData['sign'] = $post['sign'];
-            $post = $post ? pay_Arr2Xml$post) : '';
+            $post = $post ? self::pay_Arr2Xml($post) : '';
             $data = curl($APIURL,$post);
             $data = $data['data'];
             if($data){
@@ -209,9 +211,9 @@ class Wechat {
             'out_trade_no' => $orderCode,
         ];
 
-        $post = wechat_pay_sign($post);
+        $post = self::pay_sign($post);
 
-        $post = $post ? pay_Arr2Xml$post) : '';
+        $post = $post ? pay_Arr2Xml($post) : '';
         $data = curl($APIURL,$post);
         $data = $data['data'];
         $returnData = [
@@ -242,12 +244,12 @@ class Wechat {
      * @param array $post
      * @return array
      */
-    function wechat_pay_sign($post=[]){
+    function pay_sign($post=[]){
         global $C;
         if($post){
-            $post['appid'] = $C['setting']['wechat_APPID'];
+            $post['appid'] = $C['setting']['WX_APPID'];
             $post['mch_id'] = $C['setting']['wechat_PayID'];
-            $post['sign'] = wechat_sign($post, true);
+            $post['sign'] = self::sign($post, true);
         }
 
         return $post;
@@ -306,7 +308,7 @@ class Wechat {
             file_put_contents(ROOT.'./data/wechatpay.txt', cjson_encode($data));
 
             //微信主动POST数据检查 开发者ID 商户ID 必须对应 并且有返回支付订单号
-            if($data['appid'] == $C['setting']['wechat_APPID'] && $data['mch_id'] == $C['setting']['wechat_PayID'] && $data['out_trade_no']){
+            if($data['appid'] == $C['setting']['WX_APPID'] && $data['mch_id'] == $C['setting']['wechat_PayID'] && $data['out_trade_no']){
                 $orderData = DB('user_payorders')->orderCode($data['out_trade_no']);
                 if($orderData && $orderData['Status'] ==0 && $orderData['PayID']){
                     DB('user_payorders')->update(['PayCallback'=> cjson_encode($data)],['PayID'=>$orderData['PayID']]);

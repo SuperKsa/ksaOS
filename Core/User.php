@@ -67,7 +67,15 @@ class User{
 	static function Login(array $user=[], string $account='', string $password=''){
 		global $C;
 		if($account && $password && $user && is_array($user) && isset($user['uid']) && $user['password']){
-			$PWstatus = self::checkPassword($user, $password);
+            $PWstatus = false;
+		    if($account =='WECHAT'){
+		        if($password == $user['WXopenid']){
+                    $PWstatus = true;
+                }
+            }else{
+                $PWstatus = self::checkPassword($user, $password);
+            }
+
 			if($PWstatus){
 				$token = self::getToken($user);
 				$s = cookies('token',$token,86400 * 15);
