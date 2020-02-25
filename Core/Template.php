@@ -17,31 +17,74 @@ class template {
 	
 	private $replacecode = ['search' => [], 'replace' => []];
 	private $file = '';
+	public static $cacheDIR = 'data/cache/';
 
 	static function show($tpl='',$dir='', $DirName=''){
 	    if(!$dir || !$tpl){
-            $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-            //未指定模板目录时 自动默认为入口文件名相同的目录
-            if(!$dir){
-                //获取加载当前函数的文件
-                $file = str_replace(ROOT,'', $sys[0]['file']);
-                //去掉后缀
-                $dir = Files::dir($file);
-                if($dir =='App/'){
-                    $dir = Files::ext($file,1);
-                }
-                //路径格式化
-                $dir = Files::path($dir);
-            }
+            $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
             if(!$tpl){
                 $fname = Files::name($sys[0]['file'], false);
                 $tpl = $fname.'_'.$sys[1]['function'];
             }
+            $dir = $dir ? $dir : self::AutoTplDir($sys[0]['file'], $tpl);
+
         }
 
         return self::replace($tpl, $dir, $DirName);
     }
 
+    /**
+     * 模板文件名统一加tpl_前缀
+     * @param string $tpl
+     * @return array|string
+     */
+    public static function tplAdd($tpl=''){
+	    if($tpl){
+            $tpl = explode('/',$tpl);
+            $tpl[] = 'tpl_'.array_pop($tpl);
+            $tpl = implode('/',$tpl).'.php';
+        }
+        return $tpl;
+    }
+    /**
+     * 根据自动读取的模板路径自动生成最终路径
+     * @param string $dir 自动读取的路径地址(必须包含后缀名)
+     * @return string
+     */
+    public static function AutoTplDir($dir='', $tplFile=''){
+	    if($dir) {
+            $dir = Files::dir($dir);
+            $dir = Files::path($dir);
+            //去掉左边的绝对路径
+            $dir = ltrim($dir, ROOT);
+            //去掉左边的缓存路径
+            $dir = ltrim($dir, self::$cacheDIR . TPLDIR);
+            //去掉右边的模板缓存目录名
+            $dir = substr($dir, -5) == TPLDIR ? substr($dir, 0, -5) : $dir;
+
+            if($tplFile){
+                $tplFile = self::tplAdd($tplFile);
+                if(!is_file(ROOT.$dir.TPLDIR.$tplFile)){
+                    $arr = explode('/', rtrim($dir,'/'));
+                    $Ds = [];
+                    $a = '';
+                    foreach($arr as $k => $v){
+                        $a .= $v.'/';
+                        $Ds[] = $a;
+                    }
+                    $Ds = array_reverse($Ds);
+                    foreach($Ds as $k => $v){
+                        if(is_file(ROOT.$v.TPLDIR.$tplFile)){
+                            return $v;
+                        }
+                    }
+                }
+            }
+
+
+        }
+	    return $dir;
+    }
 
     /**
      * 内部引用函数 模板文件内部{template xx}
@@ -50,23 +93,8 @@ class template {
      * @return string
      */
     static function subshow($tpl=''){
-
         $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-
-        $dir = Files::dir($sys[1]['file']);
-        $dir = Files::path($dir);
-
-        $dir = explode('/',$dir);
-        foreach($dir as $k => $v){
-            if($k >1){
-                unset($dir[$k]);
-            }
-        }
-        $dir = implode('/',$dir).'/';
-        //如果起始目录不是APP 则将目录定位到APP目录
-        if(substr($dir,0,4) != 'App/'){
-            $dir = PATHS;
-        }
+        $dir = self::AutoTplDir($sys[0]['file'], $tpl);
         return self::replace($tpl, $dir);
     }
 
@@ -96,19 +124,16 @@ class template {
         //模板目录名称处理
         $DirName = $DirName ? $DirName.'/' :TPLDIR;
 
-        if(isset($_GET['ajax']) && in_array($tplfile,['common/header','common/footer'])){
+        if(isset($_GET['ajax']) && in_array($tplfile,['header','footer'])){
             $tplfile = $tplfile.'_ajax';
         }
         //模板文件名统一前缀为tpl_
-        if($tplfile){
-            $tplfile = explode('/',$tplfile);
-            $tplfile[] = 'tpl_'.array_pop($tplfile);
-            $tplfile = implode('/',$tplfile);
-        }
+        $tplfile = self::tplAdd($tplfile);
+
 		$tplDir = ($tplDir ? $tplDir : 'APP/').$DirName;
 
-        $tplfile = $tplfile.'.php';
-		$cachedir = Files::dir('data/cache/'.$DirName.$tplDir.$tplfile);
+
+		$cachedir = Files::dir($this->cacheDIR.$DirName.$tplDir.$tplfile);
 		//创建缓存目录
 		Files::mkdir(ROOT.$cachedir, 0777);
 		$tplName = Files::name($tplfile);
