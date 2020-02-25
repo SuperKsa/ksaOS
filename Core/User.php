@@ -60,8 +60,8 @@ class User{
 	 * 用户登录(登录成功，写cookie：token并返回token串)
 	 * @global type $C
 	 * @param type $user 用户原始信息
-	 * @param type $account 登录帐号
-	 * @param type $password 用户提交的明文密码
+	 * @param type $account 登录帐号 (微信登录 值固定为WECHAT)
+	 * @param type $password 用户提交的明文密码(微信登录 值=WXopenid字段值)
 	 * @return boolean 成功返回user数据且附带token字段 否则=false
 	 */
 	static function Login(array $user=[], string $account='', string $password=''){
