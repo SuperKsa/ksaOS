@@ -169,7 +169,7 @@ class IS{
      */
 	public static function F($condition, $msg=''){
 		if($condition){
-			Msg($msg);
+			APP::Msg($msg);
 		}
 	}
 }
