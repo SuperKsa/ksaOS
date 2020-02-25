@@ -56,7 +56,7 @@ class Route{
 		
 		$loadFile = 0;
 		$Dir = PATHS;
-		$R = explode('/', strtolower($C['R']));
+		$R = explode('/', $C['R']);
 		$Rn = count($R);
 		$Fun = $Rn >3 ? array_pop($R) : end($R);
 		$Loads = [];
@@ -88,7 +88,7 @@ class Route{
                 if(is_file($Dir.$value.'.php')) {
                     $Loads[] = $Dir.$value.'.php';
                 }
-                $Class .= '_'.ucfirst($value);
+                $Class .= '_'.$value;
                 //第一层如果找不到目录则在model目录下查找
                 if($key ===0 && !is_dir($Dir.$value)){
                     $Dir .= 'model/';
@@ -123,7 +123,7 @@ class Route{
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
 			}else{
-				throw new \Exception('错误的参数：'.$C['R']);
+				throw new \Exception('错误的参数：'.$C['R'].' / CLASS:'.$Class);
 			}
 		}
 
