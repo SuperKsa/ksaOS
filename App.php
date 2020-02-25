@@ -68,7 +68,7 @@ class APP extends Service{
         if($C['ajax']){
             JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
         }else{
-            include template::show('msg', PATHS);
+            include template::show('common/msg', PATHS);
         }
         exit;
     }
