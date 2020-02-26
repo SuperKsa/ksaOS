@@ -14,10 +14,9 @@ if(!defined('KSAOS')) {
 
 class template {
 	const _name = 'ksaOS模板处理类';
-	
+	const cacheDIR = 'data/cache/';
 	private $replacecode = ['search' => [], 'replace' => []];
 	private $file = '';
-	public static $cacheDIR = 'data/cache/';
 
 	static function show($tpl='',$dir='', $DirName=''){
 	    if(!$dir || !$tpl){
@@ -58,7 +57,7 @@ class template {
             //去掉左边的绝对路径
             $dir = ltrim($dir, ROOT);
             //去掉左边的缓存路径
-            $dir = ltrim($dir, self::$cacheDIR . TPLDIR);
+            $dir = ltrim($dir, self::cacheDIR . TPLDIR);
             //去掉右边的模板缓存目录名
             $dir = substr($dir, -5) == TPLDIR ? substr($dir, 0, -5) : $dir;
 
@@ -133,7 +132,7 @@ class template {
 		$tplDir = ($tplDir ? $tplDir : 'APP/').$DirName;
 
 
-		$cachedir = Files::dir($this->cacheDIR.$DirName.$tplDir.$tplfile);
+		$cachedir = Files::dir($this::cacheDIR.$DirName.$tplDir.$tplfile);
 		//创建缓存目录
 		Files::mkdir(ROOT.$cachedir, 0777);
 		$tplName = Files::name($tplfile);
