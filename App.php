@@ -70,7 +70,11 @@ class APP extends Service{
         }else{
             $tpl = 'common/msg';
             $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-            $dir = template::AutoTplDir($sys[0]['file'],$tpl);
+            $f = $sys[0]['file'];
+            if($sys[0]['function'] =='Msg' && strpos($sys[0]['file'],'Is.php')){
+                $f = $sys[1]['file'];
+            }
+            $dir = template::AutoTplDir($f,$tpl);
             include template::show($tpl, ROOT.$dir);
         }
         exit;
