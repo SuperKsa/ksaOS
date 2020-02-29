@@ -538,3 +538,31 @@ function IP() {
 	define('IPPROT',$C['PROT']);
 	return $ip;
 }
+
+/**
+ * CSS rem转px
+ * @param string $str CSS CODE
+ * @param int $N 1rem={$N}px
+ * @return string
+ */
+function CSS_rem2px($str='',$N=100){
+    $new = preg_replace_callback('/([0-9\.]+)rem/i', function($a)use($N){
+        $a[1] = floatval($a[1]);
+        return floatval($a[1] * $N).'px';
+    },$str);
+    return $new;
+}
+
+/**
+ * CSS px转rem
+ * @param string $str CSS CODE
+ * @param int $N 1rem={$N}px
+ * @return string
+ */
+function CSS_px2rem($str='',$N=100){
+    $new = preg_replace_callback('/([0-9]+)px/i', function($a)use($N){
+        $a[1] = floatval($a[1]);
+        return floatval($a[1] / $N).'rem';
+    },$str);
+    return $new;
+}

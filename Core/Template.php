@@ -57,7 +57,7 @@ class template {
             //去掉左边的绝对路径
             $dir = ltrim($dir, ROOT);
             //去掉左边的缓存路径
-            $dir = ltrim($dir, self::cacheDIR . TPLDIR);
+            $dir = ltrim($dir, self::cacheDIR.'template/');
             //去掉右边的模板缓存目录名
             $dir = substr($dir, -5) == TPLDIR ? substr($dir, 0, -5) : $dir;
 
@@ -65,6 +65,7 @@ class template {
                 $tplFile = self::tplAdd($tplFile);
                 if(!is_file(ROOT.$dir.TPLDIR.$tplFile)){
                     $arr = explode('/', rtrim($dir,'/'));
+
                     $Ds = [];
                     $a = '';
                     foreach($arr as $k => $v){
@@ -132,7 +133,7 @@ class template {
 		$tplDir = ($tplDir ? $tplDir : 'APP/').$DirName;
 
 
-		$cachedir = Files::dir($this::cacheDIR.$DirName.$tplDir.$tplfile);
+		$cachedir = Files::dir($this::cacheDIR.'template/'.$tplDir.$tplfile);
 		//创建缓存目录
 		Files::mkdir(ROOT.$cachedir, 0777);
 		$tplName = Files::name($tplfile);
