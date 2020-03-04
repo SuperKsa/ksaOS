@@ -207,7 +207,12 @@ class DB{
                 $WS[] = $args[0];
             }
         }
-
+        //过滤空值
+        foreach($WS as $key => $value){
+            if(!$value){
+                unset($WS[$key]);
+            }
+        }
         return $WS;
     }
 
@@ -225,11 +230,6 @@ class DB{
      */
     public function whereOr() {
         $WS = call_user_func_array([$this,'_where'], func_get_args());
-        foreach($WS as $key => $value){
-            if(!$value){
-                unset($WS[$key]);
-            }
-        }
         if($WS){
             $this->__where[] = '('.implode(' OR ', $WS).')';
         }
@@ -238,7 +238,9 @@ class DB{
 
 	public function where() {
         $WS = call_user_func_array([$this,'_where'], func_get_args());
-		$this->__where[] = implode(' AND ', $WS);
+        if($WS) {
+            $this->__where[] = implode(' AND ', $WS);
+        }
 		return $this;
 	}
 	
