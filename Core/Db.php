@@ -140,7 +140,8 @@ class DB{
 		}
 		return $this;
 	}
-	
+
+	//_We准备抛弃 2020年3月4日 20:24:23
 	private function _We($str){
 		$sql = '';
         $args = func_get_args();
@@ -166,69 +167,78 @@ class DB{
 		}
 		return $sql;
 	}
-	
-	/**
-	 * 构造器 WHERE（可选）介绍
-	 * 
-	 * 一个参数：where([key=>val, [key2,'操作符',val2], key3=>val3 .... ])
-	 *一个参数支持函数：where([ key=>val, function(){return '';},  [key2,'操作符',val2], key3=>val3])
-	 * 两个参数：where(key,val)
-	 * 三个参数：where(key, '操作符', value)
-	 * N个参数：where([key,val] , [key2,'操作符',val2] , [key3,val3] ...)
-	 * N个参数支持函数：where([key,val] , [key2,'操作符',val2] , function(){return '';})
-	 * 
-	 * 函数支持介绍（PHP7特性 一般用于子查询）
-	 *	每组where支持闭包函数 return的值作为一个where条件
-	 * 
-	 * 操作符支持： = - + | & ^ >  < <= >= != null isnull like in notin
-	 * 
-	 * val介绍：
-	 *	快捷IN where(key , [1,2,3])  where([key=>[1,2,3]]) 解析后 key IN(1,2,3)
-	 *	快捷IN 数组内只有一个值则作为条件=  where(key=>[1]) 解析后 key=1
-	 *	快捷NULL(判断is_null() ) where([key=>NULL]) where(key,NULL) 解析后 key IS NULL
-	 *	如果数组内只有一个值则作为条件=  where([key=>[1]]) where(key,[1]) 解析后 key=1
-	 * @return $this
-	 */
+
+
+
+	private function _where(){
+        $WS = [];
+        $args = func_get_args();
+        $count = count($args);
+        //三个参数(1、2参数为字符串) (a,'!=',b) 解： a!=b
+        if(isset($args[2]) && is_string($args[0])){
+            if(is_string($args[1])){
+                $WS[] = $this->__field($args[0], $args[1], $args[2]);
+            }
+        //两个参数(第一个参数为字符串) (a,b) 解： a=b
+        }elseif(isset($args[1]) && is_string($args[0])){
+            $WS[] = $this->__field($args[0], $args[1]);
+
+        //只有一个参数时 必须为数组
+        }elseif($args[0]){
+            if(is_array($args[0])){
+                foreach($args[0] as $key => $value){
+                    //如果键名是数字 ([ [a,b] , [a,'!=',b] ]) 解：a=b AND a != b
+                    if(is_int($key)){
+                        //值是数组 则表示一组 2-3参数
+                        if(is_array($value)){
+                            //$c = count($value);
+                            //$value = $c ==3 ? [$value[0],$value[1],$value[2]] : [$value[0],$value[1]];
+                            $WS[] = isset($value[2]) ? $this->__field($value[0],$value[2],$value[1]) : $this->__field($value[0],$value[1]);
+                        }elseif(is_object($value)){
+                            $WS[] = $value();
+                        }
+                        //([a=>b,c=>d])   解：a=b AND c=d
+                    }else{
+                        $WS[] = $this->__field($key, $value);
+                    }
+                }
+            //('a=b AND c=d') 解：直接作为where条件输入
+            }elseif(is_string($args[0])){
+                $WS[] = $args[0];
+            }
+        }
+
+        return $WS;
+    }
+
+    /*
+    普通传参：
+        1. 1参数 ('a=b AND c=d') 解：直接作为where条件输入
+        2. 2参数 (a,b) 解： a=b
+        3. 3参数 (a,'!=',b) 解： a!=b
+    数组传参：
+        1.每组为参数
+            ([a=>b,c=>d])   解：a=b AND c=d
+        2.每组为数组 用法与1、2相同：
+        ([ [a,b] , [a,'!=',b] ]) 解：a=b AND a != b
+
+     */
+    public function whereOr() {
+        $WS = call_user_func_array([$this,'_where'], func_get_args());
+        foreach($WS as $key => $value){
+            if(!$value){
+                unset($WS[$key]);
+            }
+        }
+        if($WS){
+            $this->__where[] = '('.implode(' OR ', $WS).')';
+        }
+        return $this;
+    }
+
 	public function where() {
-		$args = func_get_args();
-		$count = count($args);
-		//只有一个参数时 必须为数组
-		if($count == 1 && is_array($args[0])){
-			foreach($args[0] as $key => $value){
-				//如果键名是数字
-				if(is_int($key)){
-					//值是数组 则表示一组 2-3参数
-					if(is_array($value)){
-						$c = count($value);
-						$value = $c ==3 ? [$value[0],$value[1],$value[2]] : [$value[0],$value[1]];
-						$this->__where[] = $this->_We($value);
-					}elseif(is_object($value)){
-						$this->__where[] = $this->_We($value);
-					}
-				}else{
-					$this->__where[] = $this->_We([$key, $value]);
-				}
-			}
-		//两个参数(第一个参数为字符串) 1=键名 2=值
-		}elseif($count == 2 && is_string($args[0])){
-			$this->__where[] = $this->_We([$args[0], $args[1]]);
-			
-		//三个参数(1、2参数为字符串) 1=键名 2=操作符 3=值
-		}elseif($count == 3 && is_string($args[0])){
-			if(is_string($args[1])){
-				$this->__where[] = $this->_We([$args[0], $args[1], $args[2]]);
-			}
-		//N个参数时 每个参数必须是数组 每组2-3个参数
-		}else{
-			foreach($args as $key => $value){
-				if(is_array($value)){
-					if(count($value) ==2){
-						$value = [$value[0],$value[1]];
-					}
-				}
-				$this->__where[] = $this->_We($value);
-			}
-		}
+        $WS = call_user_func_array([$this,'_where'], func_get_args());
+		$this->__where[] = implode(' AND ', $WS);
 		return $this;
 	}
 	
