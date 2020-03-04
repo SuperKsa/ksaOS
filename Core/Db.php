@@ -177,7 +177,7 @@ class DB{
         //三个参数(1、2参数为字符串) (a,'!=',b) 解： a!=b
         if(isset($args[2]) && is_string($args[0])){
             if(is_string($args[1])){
-                $WS[] = $this->__field($args[0], $args[1], $args[2]);
+                $WS[] = $this->__field($args[0], $args[2], $args[1]);
             }
         //两个参数(第一个参数为字符串) (a,b) 解： a=b
         }elseif(isset($args[1]) && is_string($args[0])){
