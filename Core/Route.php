@@ -60,7 +60,6 @@ class Route{
 		$Rn = count($R);
 		$Fun = $Rn >3 ? array_pop($R) : end($R);
 		$Loads = [];
-        $upDir = '';
 
         foreach($R as $key => $value){
             if($key >2){
@@ -71,6 +70,7 @@ class Route{
         for($i=0; $i<3-$Rn; $i++){
             $R[] = 'index';
         }
+        $classList = [];
 		foreach($R as $key => $value){
 
             if(is_dir($Dir)){
@@ -88,7 +88,9 @@ class Route{
                 if(is_file($Dir.$value.'.php')) {
                     $Loads[] = $Dir.$value.'.php';
                 }
+
                 $Class .= '_'.$value;
+                $classList[] = $Class;
                 //第一层如果找不到目录则在model目录下查找
                 if($key ===0 && !is_dir($Dir.$value)){
                     $Dir .= 'model/';
@@ -97,28 +99,37 @@ class Route{
                 $Dir .= $value.'/';
 			}
 		}
+
+
 		$__M_FunInit = 0;
 		if($Loads){
             foreach($Loads as $value){
                 include_once $value;
             }
-
-			if(class_exists($Class,false)){
-				$OBJ = new $Class;
-			}
-			if(method_exists($OBJ, 'common')){
-				$OBJ->common();
-			}
-			if(method_exists($OBJ, 'commonPost')){
-				$OBJ->commonPost();
-			}
-			if(method_exists($OBJ, 'commonView')){
-				$OBJ->commonView();
-			}
-			if(!method_exists($OBJ, $Fun)){
-				$Fun = 'index';
-			}
-
+            //class逐级检查，取存在的最后一个new
+            foreach($classList as $key => $value){
+                if(!class_exists($value,false)){
+                    unset($classList[$key]);
+                }
+            }
+            $Class = end($classList);
+            if($Class) {
+                if (class_exists($Class, false)) {
+                    $OBJ = new $Class;
+                }
+                if (method_exists($OBJ, 'common')) {
+                    $OBJ->common();
+                }
+                if (method_exists($OBJ, 'commonPost')) {
+                    $OBJ->commonPost();
+                }
+                if (method_exists($OBJ, 'commonView')) {
+                    $OBJ->commonView();
+                }
+                if (!method_exists($OBJ, $Fun)) {
+                    $Fun = 'index';
+                }
+            }
 			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
