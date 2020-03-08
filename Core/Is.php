@@ -102,11 +102,12 @@ class IS{
      *
      * @return bool
      */
-	public static function Phone($str=0, $cn=86, $type='mobile') {
-		if($type == 'mobile' && $cn == 86 && mb_strlen($str) == 11 && preg_match("/^1([0-9]{10})$/", $str)){
+	public static function Phone($str='') {
+	    //先判断是否是座机 区号[ |-]号码
+		if(preg_match("/^[0-9]{3,4}[\s+|-]?[0-9]{7,8}$/", $str)){
 			return true;
 		}
-		return false;
+        return self::Mobile($str);
 	}
 
     /**
@@ -121,6 +122,15 @@ class IS{
 		}
 		return false;
 	}
+
+    /**
+     * 判断是否为中文姓名
+     * @param string $str
+     * @return bool
+     */
+	public static function FullName($str=''){
+        return $str && preg_match("/^[\x{4e00}-\x{9fa5}]{2,8}$/u", $str);
+    }
 
     /**验证是否为身份证号码
      * @param int $str
