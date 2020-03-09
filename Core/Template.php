@@ -21,11 +21,18 @@ class template {
 	static function show($tpl='',$dir='', $DirName=''){
 	    if(!$dir || !$tpl){
             $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+
             if(!$tpl){
                 $fname = Files::name($sys[0]['file'], false);
                 $tpl = $fname.'_'.$sys[1]['function'];
             }
-            $dir = $dir ? $dir : self::AutoTplDir($sys[0]['file'], $tpl);
+            if(!$dir) {
+                $F = $sys[0]['file'];
+                if (stripos($F,'ksaos/app.php') && strtolower($tpl) == 'common/msg' && strtolower($sys[1]['function']) == 'msg' && strtolower($sys[1]['class']) == 'ksaos\app') {
+                    $F = $sys[1]['file'];
+                }
+                $dir = self::AutoTplDir($F, $tpl);
+            }
 
         }
 
@@ -65,7 +72,6 @@ class template {
                 $tplFile = self::tplAdd($tplFile);
                 if(!is_file(ROOT.$dir.TPLDIR.$tplFile)){
                     $arr = explode('/', rtrim($dir,'/'));
-
                     $Ds = [];
                     $a = '';
                     foreach($arr as $k => $v){

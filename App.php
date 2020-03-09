@@ -68,14 +68,7 @@ class APP extends Service{
         if($C['ajax']){
             JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
         }else{
-            $tpl = 'common/msg';
-            $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-            $f = $sys[0]['file'];
-            if($sys[0]['function'] =='Msg' && strpos($sys[0]['file'],'Is.php')){
-                $f = $sys[1]['file'];
-            }
-            $dir = template::AutoTplDir($f,$tpl);
-            include template::show($tpl, ROOT.$dir);
+            include template::show('common/msg');
         }
         exit;
     }
