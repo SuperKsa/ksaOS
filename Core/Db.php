@@ -141,44 +141,28 @@ class DB{
 		return $this;
 	}
 
-	//_We准备抛弃 2020年3月4日 20:24:23
-	private function _We($str){
-		$sql = '';
-        $args = func_get_args();
-		if(count($args) >1){
-		    $v = $args;
-        }else{
-		    $v = $str;
-        }
-		if(is_array($v)){
-			$c = count($v);
-			//[key , = , val]
-			if($c ==3){
-				$sql = $this->__field($v[0], $v[2], $v[1]);
-			//[key,val]
-			}elseif($c == 2){
-				$sql = $this->__field($v[0], $v[1]);
-			}elseif(isset($v[0])){
-				$sql = $this->__field($v[0], '', 'null');
-			}
-		//function
-		}elseif(is_object($v)){
-			$sql = $v();
-		}
-		return $sql;
-	}
 
+    /**
+     * 普通传参：
+            1. 1参数 ('a=b AND c=d') 解：直接作为where条件输入
+            2. 2参数 (a,b) 解： a=b
+            3. 3参数 (a,'!=',b) 解： a!=b
 
+        数组传参：（参数1=查询参数 , 参数2=连接符and/or不指定默认and）
+            1.参数
+            ([a=>b,c=>d])   解：a=b AND c=d
+            2.每组为数组 每组用法与1、2相同：
+            ([ [a,b] , [a,'!=',b] ]) 解：a=b AND a != b
+     *
+     */
 
-	private function _where(){
+	public function where(){
+	    $con = 'AND';
         $WS = [];
         $args = func_get_args();
-        $count = count($args);
         //三个参数(1、2参数为字符串) (a,'!=',b) 解： a!=b
         if(isset($args[2]) && is_string($args[0])){
-            if(is_string($args[1])){
-                $WS[] = $this->__field($args[0], $args[2], $args[1]);
-            }
+            $WS[] = $this->__field($args[0], $args[2], $args[1]);
         //两个参数(第一个参数为字符串) (a,b) 解： a=b
         }elseif(isset($args[1]) && is_string($args[0])){
             $WS[] = $this->__field($args[0], $args[1]);
@@ -191,13 +175,9 @@ class DB{
                     if(is_int($key)){
                         //值是数组 则表示一组 2-3参数
                         if(is_array($value)){
-                            //$c = count($value);
-                            //$value = $c ==3 ? [$value[0],$value[1],$value[2]] : [$value[0],$value[1]];
                             $WS[] = isset($value[2]) ? $this->__field($value[0],$value[2],$value[1]) : $this->__field($value[0],$value[1]);
-                        }elseif(is_object($value)){
-                            $WS[] = $value();
                         }
-                        //([a=>b,c=>d])   解：a=b AND c=d
+                    //([a=>b,c=>d])   解：a=b AND c=d
                     }else{
                         $WS[] = $this->__field($key, $value);
                     }
@@ -206,43 +186,22 @@ class DB{
             }elseif(is_string($args[0])){
                 $WS[] = $args[0];
             }
+            if($args[1] && strtolower($args[1]) =='or'){
+                $con = 'OR';
+            }
         }
+
         //过滤空值
         foreach($WS as $key => $value){
             if(!$value){
                 unset($WS[$key]);
             }
         }
-        return $WS;
-    }
-
-    /*
-    普通传参：
-        1. 1参数 ('a=b AND c=d') 解：直接作为where条件输入
-        2. 2参数 (a,b) 解： a=b
-        3. 3参数 (a,'!=',b) 解： a!=b
-    数组传参：
-        1.每组为参数
-            ([a=>b,c=>d])   解：a=b AND c=d
-        2.每组为数组 用法与1、2相同：
-        ([ [a,b] , [a,'!=',b] ]) 解：a=b AND a != b
-
-     */
-    public function whereOr() {
-        $WS = call_user_func_array([$this,'_where'], func_get_args());
         if($WS){
-            $this->__where[] = '('.implode(' OR ', $WS).')';
+            $this->__where[] = [$con,$WS];
         }
         return $this;
     }
-
-	public function where() {
-        $WS = call_user_func_array([$this,'_where'], func_get_args());
-        if($WS) {
-            $this->__where[] = implode(' AND ', $WS);
-        }
-		return $this;
-	}
 	
 	/**
 	 * 缓存容器
@@ -386,7 +345,16 @@ class DB{
 
 		//update select delete三种模式才能使用where
 		if(in_array($idef, ['select', 'update', 'delete']) && $this->__where){
-			$sql[] = 'WHERE '.implode(' AND ',$this->__where);
+		    $where = [];
+		    foreach($this->__where as $value){
+                $v = (is_array($value[1]) ? implode(' '.$value[0].' ',$value[1]) : $value[1]);
+		        if($value[0] =='OR'){
+                    $where []= ' ('.$v.')';
+                }else{
+		            $where []= $v;
+                }
+            }
+			$sql[] = 'WHERE '.implode(' AND ', $where);
 		}
 		if($idef =='select'){
 			$sql[] = $this->order ? 'ORDER BY '.implode(', ',$this->order) : '';
@@ -397,6 +365,7 @@ class DB{
 		}
 		$sql = array_filter($sql);
 		$sql = implode(' ',$sql);
+
 		$this->__SQL = $sql;
 		return $sql;
 	}
@@ -523,7 +492,17 @@ class DB{
 		}
 		$sql = $this->sql($replace ? 'replace' : 'insert');
 		foreach($data as $key => $val){
-			$data[$key] = $this->__field($key, $val, '=');
+
+            //如果值不存在 但值是数组、字符串 则调整值为NULL
+            if(!$val && is_array($val)){
+                $val = NULL;
+            }
+            //送到修饰符处理步骤 进一步对val进行严格处理
+            list($field, $val, $tp) = $this->__modify($key, $val,1);
+            $val = is_null($val) ? 'NULL' : '\''.$val.'\'';
+            $data[$key] = '`'.$field.'`='.$val;
+
+
 		}
 		$set = implode(' , ',$data);
 		$sql = str_replace('{%idef%}',$set,$sql);
@@ -559,8 +538,16 @@ class DB{
 					}
 				}
 			}
-			$data[$key] = $this->__field($key, $val, $s);
+            //如果值不存在 但值是数组、字符串 则调整值为NULL
+            if(!$val && is_array($val)){
+                $val = NULL;
+            }
+			//送到修饰符处理步骤 进一步对val进行严格处理
+            list($field, $val, $tp) = $this->__modify($key, $val,1);
+            $val = is_null($val) ? 'NULL' : '\''.$val.'\'';
+			$data[$key] = '`'.$field.'`'.$s.$val;
 		}
+
 		$set = implode(' , ',$data);
 		$sql = str_replace('{%idef%}',$set,$sql);
 		$this->tableLink();
@@ -568,7 +555,6 @@ class DB{
 		$this->__cache('del');//删缓存
 		return $res;
 	}
-	
 	
 	
 	/**
@@ -594,19 +580,20 @@ class DB{
 		
 		return $ret;
 	}
-	
-	/**
-	 * 字段值修饰符过滤器
-	 * 修饰符(Modifier)：
-	 *	int=纯数字
-	 *	abc=纯字母
-	 *	intabc=纯数字或字母
-	 *	intabcs=纯数字、字母、下划线、横杠
-	 * @param string $key 带修饰符的字段 Modifier:field
-	 * @param string $value 字段值
-	 * @return array [key , value, Modifier]
-	 */
-	public function __safe($key='',$val=''){
+
+    /**
+     * 字段值修饰符过滤器
+     * 修饰符(Modifier)：
+     *	    int=纯数字
+     *	    abc=纯字母
+     *	    intabc=纯数字或字母
+     *	    intabcs=纯数字、字母、下划线、横杠
+     * @param string $key 带修饰符的字段 Modifier:field
+     * @param string $val 字段值
+     * @param int $type 处理方式（0=where查询 1=update|insert入库）
+     * @return array [key , value, Modifier]
+     */
+	public function __modify($key='',$val='', $type=0){
 		$tp = 'string';
 		$n = strpos($key,':');
 		//如果字段名存在过滤修饰符
@@ -615,6 +602,10 @@ class DB{
 			$key = substr($key,$n+1);
 		}
 		$tp = strtolower($tp);
+        if($val){
+            $val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
+            $val = caddslashes($val);
+        }
 		switch($tp){
 			case 'int': //纯数字
 				$val += 0; break;
@@ -626,11 +617,17 @@ class DB{
 				$val = preg_replace('/[^a-z0-9]/i','',$val); break;
 			case 'intabcs': //纯数字、字母、下划线、横杠
 				$val = preg_replace('/[^a-z0-9-_]/i','',$val); break;
-			default:
-				if($val){
-					$val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
-					$val = caddslashes($val);
-				}
+            case 'json': //JSON支持
+                //入库直接将数组转为JSON
+                if($type){
+                    $val = $val && is_array($val) ? json_encode($val, JSON_UNESCAPED_UNICODE) : NULL;
+                //查询 封装处理 查询格式必须为'json:field'=>[jsonKEY,jsonVALUE]
+                }else{
+                    $val = 'JSON_CONTAINS('.$key.',JSON_OBJECT(\''.$val[0].'\', \''.$val[1].'\'))';
+                    $key = 'json';
+                }
+                break;
+            default:
 				break;
 		}
 		return [$key, $val, $tp];
@@ -647,7 +644,7 @@ class DB{
 	public function __field($field='', $val='', $glue = '=') {
 		$glue = $glue === false ? '=' : strtolower($glue);
 
-		list($field, $val, $tp) = self::__safe($field,$val);
+		list($field, $val, $tp) = self::__modify($field,$val);
 
 		//查询条件标准组合函数 外部使用
 		$field = self::__fieldQ($field);
@@ -758,7 +755,7 @@ class DB{
 		}elseif($str === NULL){
 			return 'NULL';
 		}elseif (is_array($str)) {
-			return json_encode($str,JSON_UNESCAPED_UNICODE);
+			return $str ? json_encode($str,JSON_UNESCAPED_UNICODE) : 'NULL';
 		}elseif (is_bool($str)){
 			return $str ? '1' : '0';
 		}
