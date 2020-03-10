@@ -34,7 +34,9 @@ class Attach{
 	 * @return int
 	 */
 	public static function tableID($idtype, $id){
-		return 0;
+        $id = intval($id);
+        $id = substr($id,-1); //取最后一位作为分表ID
+	    return $id;
 	}
 	
 	/**
@@ -59,6 +61,7 @@ class Attach{
 					$data['idtype'] = $idtype;
 					$data['id'] = $id;
 					$data['aid'] = DB('attach')->insert([
+					    'tableID' => $tableID,
 						'idtype'=>$idtype,
 						'id' => $id
 					],true);
@@ -134,7 +137,6 @@ class Attach{
 	 */
 	public static function __delFile($idtype, $src, $isSyn=0){
 		$path = self::Path($idtype, $src);
-		$path = APP::File()->path($path);
 		if($path){
 			//删除远程附件
 			if($isSyn){
@@ -155,9 +157,10 @@ class Attach{
 	public static function Path($md='',$file=''){
 		$md = self::idtype($md);
 		if($md && $file){
-			return 'data/attach/'.$md.'/'.$file;
+            return 'data/attach/'.$md.'/'.$file;
 		}
 	}
+
 	/**
 	 * 输出图片访问地址 用于访问
 	 * @param string $md
