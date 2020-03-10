@@ -31,24 +31,28 @@ class Model_area{
      * @param $city 市ID
      * @param $area 县ID
      * @param $town 镇ID
-     * @return bool
+     * @return 输出对应地址
      */
-    static function issetID($province, $city, $area, $town){
+    static function address($province, $city, $area, $town){
         $data = self::All();
         $isset = [];
         if($province && $data[$province] && $data[$province]['upid'] ==0){
-            $isset[0] = $data[$province];
+            $isset[0] = $data[$province]['name'];
         }
         if($city && $data[$city] && $data[$city]['upID'] == $province){
-            $isset[1] = $data[$city];
+            $isset[1] = $data[$city]['name'];
         }
         if($area && $data[$area] && $data[$area]['upID'] == $city){
-            $isset[2] = $data[$area];
+            $isset[2] = $data[$area]['name'];
         }
         if($town && $data[$town] && $data[$town]['upID'] == $area){
-            $isset[3] = $data[$town];
+            $isset[3] = $data[$town]['name'];
         }
-        return (!$town || $isset[3]) && (!$area || $isset[2]) && (!$city || $isset[1]) && (!$province || $isset[0]);
+        $dt = [];
+        if((!$town || $isset[3]) && (!$area || $isset[2]) && (!$city || $isset[1]) && (!$province || $isset[0])){
+            $dt = $isset;
+        }
+        return $dt;
     }
 
     /**
