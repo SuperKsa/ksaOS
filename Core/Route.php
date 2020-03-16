@@ -133,14 +133,15 @@ class Route{
 			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
 				$OBJ->$Fun();
 				$__M_FunInit = 1;
-			}else{
-				throw new \Exception('错误的参数：'.$C['R'].' / CLASS:'.$Class);
+				return true;
 			}
 		}
 
 		if(!$__M_FunInit){
-			throw new \Exception('错误的访问：'.$Class,404);
+            header('HTTP/1.1 404 Not Found');
+            exit;
 		}
+
 	}
 	
 	/**
