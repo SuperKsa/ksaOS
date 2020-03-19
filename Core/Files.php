@@ -55,17 +55,21 @@ class Files{
 		}
 		return true;
 	}
-	
-	/**
-	 * 返回路径中的目录路径
-	 * @param string $dir 路径地址（可以包含文件）
-	 * @return boolean 返回目录路径 最后有/
-	 */
-	public static function dir($dir=''){
+
+    /**
+     * 返回路径中的目录路径
+     * @param string $dir 路径地址（可以包含文件名）
+     * @param int $back 返回目录需要前进的层级次数
+     * @return bool|string 返回目录路径 最后有/
+     */
+	public static function dir($dir='', $back=0){
 		if($dir){
-			$d = pathinfo($dir);
-			if($d['dirname']){
-			    return str_replace(ROOT,'',$d['dirname']).'/';
+            $back ++;
+		    for($i=0; $i<$back; $i++){
+                $dir = pathinfo($dir)['dirname'];
+            }
+			if($dir){
+			    return str_replace(ROOT,'',$dir).'/';
             }
 		}
 		return false;
