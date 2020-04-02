@@ -534,7 +534,7 @@ class DB{
 					$k = substr($val, 0,1);
 					$val = abs($val);
 					if(in_array($k,['+','-'])){
-						$s = $k.$s;
+						$s = $s.' `'.$key.'` '.$k.' ';
 					}
 				}
 			}
