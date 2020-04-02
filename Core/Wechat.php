@@ -38,7 +38,7 @@ class Wechat {
             return ;
         }
         //如果token未过期
-        if($access_token_time + $outTime < TIME || !$access_token){
+        if($access_token_time + $outTime < time() || !$access_token){
             $curl = Curls::send('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid='.$APPID.'&secret='.$AppSecret);
             $data = $curl['data'] ? json_decode($curl['data'], true) : [];
             if($data['access_token']){
@@ -132,19 +132,20 @@ class Wechat {
         }
         return $dt;
     }
+
     /**
      * 微信API下单函数
      * 参考资料：https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
      * @param string $userOpenid 用户openID
-     * @param string $orderCode 系统内部订单编号
+     * @param string $PayCode 系统内部订单编号
      * @param string $str
      */
-    static function wechat_pay_api_order($userOpenid,$orderCode='',$total=0,$strbody='',$callbackUrl=''){
+    static function Pay_create($userOpenid, $PayCode='', $total=0, $strbody='', $callbackUrl=''){
         global $C;
         $APIURL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
         //回调地址
         $callbackUrl = ($callbackUrl);
-        $nonce_str = crand(10);
+        $nonce_str = rands(10);
         $total = floatval($total);
         $total = $total > 0 ? $total * 100 : 0;
 
@@ -156,26 +157,27 @@ class Wechat {
             'PayUrl' => '', //支付地址
         ];
 
-        if((!WECHAT || WECHAT && $userOpenid) && $orderCode && $total >0){
+        if($PayCode && $total >0){
 
             $post = [
                 'body' => $strbody, //商品简单描述 100字内
                 'total_fee' => $total,//支付金额
                 'sign_type' => 'MD5',
                 'nonce_str' => $nonce_str,
-                'out_trade_no' => $orderCode,
-                'spbill_create_ip' => $C['ip'],
+                'out_trade_no' => $PayCode,
+                'spbill_create_ip' => $C['IP'],
                 'notify_url' => $callbackUrl,
-                'trade_type' => WECHAT ? 'JSAPI' : 'MWEB', //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
+                'trade_type' => self::isWechat() ? 'JSAPI' : 'MWEB', //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
             ];
-            if(WECHAT){
+            if($userOpenid){
                 $post['openid'] = $userOpenid;
             }
-
             $post = self::pay_sign($post);
+
             $returnData['sign'] = $post['sign'];
             $post = $post ? self::pay_Arr2Xml($post) : '';
-            $data = curl($APIURL,$post);
+            $data = Curls::send($APIURL,$post);
+
             $data = $data['data'];
             if($data){
                 $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -184,6 +186,17 @@ class Wechat {
                     $returnData = array_merge($data,$returnData);
                     $returnData['success'] = 1;
                     $returnData['PayUrl'] = $data['mweb_url'];
+
+                    //以下字段在return_code 和result_code都为SUCCESS的时候有返回
+                    //交易类型 SAPI=JSAPI支付 NATIVE=Native支付 APP=APP支付
+                    $returnData['trade_type'] = $data['trade_type']; //JSAPI
+
+                    //预支付交易会话标识 微信生成的预支付会话标识，用于后续接口调用中使用，该值有效期为2小时
+                    $returnData['prepay_id'] = $data['prepay_id']; //wx201410272009395522657a690389285100
+
+                    //trade_type=NATIVE时有返回，此url用于生成支付二维码，然后提供给用户进行扫码支付。
+                    $returnData['code_url'] = $data['code_url']; //weixin://wxpay/bizpayurl/up?pr=NwY5Mz9&groupid=00
+
                 }
                 if($data['err_code_des']){
                     $returnData['msg'] = $data['err_code_des'];
@@ -192,7 +205,7 @@ class Wechat {
                 }
             }
         }
-        $returnData['msg'] = Common_replace_html($returnData['msg'], 30);
+        $returnData['msg'] = stripTags($returnData['msg'], 30);
         return $returnData;
     }
 
@@ -201,20 +214,20 @@ class Wechat {
      * 参考资料：https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_2
      * @param string $ordercode 自己系统订单编号
      */
-    function wechat_pay_api_order_query($orderCode=''){
+    function pay_query($PayCode=''){
         global $C;
         $APIURL = 'https://api.mch.weixin.qq.com/pay/orderquery';
-        $nonce_str = crand(10);
+        $nonce_str = rands(10);
         $post = [
             'sign_type' => 'MD5',
             'nonce_str' => $nonce_str,
-            'out_trade_no' => $orderCode,
+            'out_trade_no' => $PayCode,
         ];
 
         $post = self::pay_sign($post);
 
-        $post = $post ? pay_Arr2Xml($post) : '';
-        $data = curl($APIURL,$post);
+        $post = $post ? self::pay_Arr2Xml($post) : '';
+        $data = Curls::send($APIURL,$post);
         $data = $data['data'];
         $returnData = [
             'success' => 0,
@@ -226,11 +239,11 @@ class Wechat {
         if($data){
             $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
             $data = json_decode(json_encode($data),true);
-            if(strtolower($data['trade_state']) == 'success' && $data['mch_id'] == $C['setting']['wechat_PayID'] && $data['out_trade_no'] == $orderCode){
+            if(strtolower($data['trade_state']) == 'success' && $data['mch_id'] == $C['setting']['WX_PayID'] && $data['out_trade_no'] == $PayCode){
                 $returnData = $data;
                 $returnData['success'] = 1;
                 $returnData['PayStatus'] = 1; //付款成功
-                $returnData['orderCode'] = $orderCode; //成功的同时必须返回传入的$orderCode
+                $returnData['orderCode'] = $PayCode; //成功的同时必须返回传入的$PayCode
                 $returnData['total'] = floatval($data['total_fee']) * 100; //微信的金额为分 需要x100 =元
             }
             $returnData['msg'] = $data['trade_state_desc'];
@@ -244,14 +257,13 @@ class Wechat {
      * @param array $post
      * @return array
      */
-    function pay_sign($post=[]){
+    static function pay_sign($post=[]){
         global $C;
         if($post){
             $post['appid'] = $C['setting']['WX_APPID'];
-            $post['mch_id'] = $C['setting']['wechat_PayID'];
+            $post['mch_id'] = $C['setting']['WX_PayID'];
             $post['sign'] = self::sign($post, true);
         }
-
         return $post;
     }
 
@@ -261,19 +273,17 @@ class Wechat {
      * @param bool $isPay 生成商家支付Sign
      * @return array|bool|string
      */
-    function sign($signArr=[], $isPay=false){
+    static function sign($signArr=[], $isPay=false){
         global $C;
         $sign = false;
         if($signArr){
             ksort($signArr);
             if($isPay){
-                $signArr['key'] = Common_replace_html($C['setting']['wechat_PayKEY'],100);
+                $signArr['key'] = stripTags($C['setting']['WX_PayKEY'],32);
             }
             $sign = [];
             foreach($signArr as $key => $value){
-                if($value !== ''){
-                    $sign[] = $key.'='. $value;
-                }
+                $sign[] = $key.'='. $value;
             }
             $sign = md5(implode('&',$sign));
             $sign = strtoupper($sign);
@@ -283,10 +293,10 @@ class Wechat {
 
     /**
      * 微信xml数据组成
-     * @param type $arr 需要组合的数组
+     * @param array $arr 需要组合的数组
      * @return string
      */
-    function pay_Arr2Xml($arr){
+    static function pay_Arr2Xml($arr){
         $xml = "<xml>";
         foreach ($arr as $key=>$val){
             if (is_numeric($val)){
@@ -305,20 +315,31 @@ class Wechat {
         if($data){
             $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
             $data = json_decode(json_encode($data),true);
-            file_put_contents(ROOT.'./data/wechatpay.txt', cjson_encode($data));
+            file_put_contents(ROOT.'./data/wechatpay.txt', json_encode($data));
 
             //微信主动POST数据检查 开发者ID 商户ID 必须对应 并且有返回支付订单号
-            if($data['appid'] == $C['setting']['WX_APPID'] && $data['mch_id'] == $C['setting']['wechat_PayID'] && $data['out_trade_no']){
+            if($data['appid'] == $C['setting']['WX_APPID'] && $data['mch_id'] == $C['setting']['WX_PayID'] && $data['out_trade_no']){
                 $orderData = DB('user_payorders')->orderCode($data['out_trade_no']);
                 if($orderData && $orderData['Status'] ==0 && $orderData['PayID']){
-                    DB('user_payorders')->update(['PayCallback'=> cjson_encode($data)],['PayID'=>$orderData['PayID']]);
-                    loadFunction('pay');
-                    Pay_query($orderData['PayID']);
+                    DB('user_payorders')->where('PayID', $orderData['PayID'])->update(['PayCallback'=> json_encode($data)]);
+                    Wechat::Pay_query($orderData['PayID']);
                 }
             }
 
 
             return '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>';
         }
+    }
+
+    /*判断是否是手机*/
+    static function isWechat() {
+        $wechat = false;
+        $useragent = strtolower($_SERVER['HTTP_USER_AGENT']);
+        if(strpos($useragent,'android') !== false || strpos($useragent,'iphone') !== false){
+            if(strpos($useragent, 'micromessenger') !== false){
+                $wechat = true;
+            }
+        }
+        return $wechat;
     }
 }

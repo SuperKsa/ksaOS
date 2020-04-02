@@ -23,7 +23,7 @@ class Alipay{
     https://docs.open.alipay.com/api_1/alipay.trade.query/
      * @param type $orderCode
      */
-    function alipay_api_order_query($orderCode=''){
+    function pay_query($orderCode=''){
         $APIURL = 'https://openapi.alipay.com/gateway.do';
         $APPID = '2019052265341092';
 
@@ -77,7 +77,7 @@ class Alipay{
      * @param type $orderCode 系统内部订单编号
      * @param type $str
      */
-    function alipay_create_order($orderCode='',$total=0,$strbody='',$callbackUrl=''){
+    static function Pay_create($orderCode='',$total=0,$strbody='',$callbackUrl=''){
         global $C;
         $APIURL = 'https://openapi.alipay.com/gateway.do';
 
