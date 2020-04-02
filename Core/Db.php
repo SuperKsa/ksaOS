@@ -379,7 +379,28 @@ class DB{
 			self::$DB->table($this->table);
 		}
 	}
-	
+
+    /**
+     * 输出指定数据表字段列表信息
+     * @param string $table 指定的数据表(注意做好安全过滤)
+     * @return array
+     */
+    public function showTable($table=''){
+        $data = [];
+        $table = self::$DB->table($table);
+        if($table){
+            $dbName = self::$DB->config['server'][self::$DB->curID]['name'];
+            if($dbName){
+                $data = self::$DB->fetch_all('SELECT * FROM information_schema.columns WHERE `table_schema`="'.$dbName.'" AND `table_name`="'.$table.'"');
+            }
+        }
+        return $data;
+    }
+
+	public function query($sql=''){
+        return self::$DB->fetch_all($sql);
+    }
+
 	/**
 	 * SQL查询 返回所有查询到的数据
 	 * @param type $keyfield 返回的数据键名字段名（默认为空 自然排序0-9）
