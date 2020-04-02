@@ -63,7 +63,13 @@ class Dates{
 		$date = self::timestamp($date);
 		return $date >0 ? gmdate($F, $date) : '';
 	}
-	
+
+    /**
+     * 获取UTC日期
+     * @param null $date
+     * @param string $F
+     * @return date|string
+     */
 	public static function UTCtime($date=NULL, $F='Y-m-d H:i:s'){
 		$date = self::timestamp($date);
 		return $date >0 ? self::times($date, $F) : '';
