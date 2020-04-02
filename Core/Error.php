@@ -118,9 +118,6 @@ class Error {
 			print_r($phpmsg);
 			echo "■■■■■■■■■■■■■ KSAOS End ■■■■■■■■■■■■■\n";
 		}else{
-			if(isset($_GET['ajax'])){
-				JSON($Msg,['msg'=>$Msg,'success'=>0,'locationUrl'=>'./']);
-			}
 			if($errorCode == '404'){
 				include template::replace('404',KSAOS.'Core/', 'tpl');
 			}else{
