@@ -98,11 +98,13 @@ class Mysqls{
 			}
 		}
 		$id = $id ? $id : $defaultID;
-		if(!$this->ping($this->link[$id])) {
-			if($this->connect($id)){
-				return $this->pre.$tablename;
-			}
-		}
+		if($this->ping($this->link[$id])) {
+            return $this->pre.$tablename;
+		}else{
+            if($this->connect($id)){
+                return $this->pre.$tablename;
+            }
+        }
 		return false;
 	}
 	
