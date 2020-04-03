@@ -680,13 +680,23 @@ class DB{
 			$glue = 'null';
 		}
 
-		if (!$isObj && in_array($glue,['=','in','notin'])) {
+		if (!$isObj && in_array($glue,['!=','=','in','notin'])) {
+
 			if(is_array($val)){
-				if(count($val) ==1){
+                $c = count($val);
+				if($c ==1){
 					$val = reset($val);
-					$glue = '=';
-				}else{
-					$glue = $glue == 'notin' ? 'notin' : 'in';
+					if($glue =='in'){
+                        $glue = '=';
+                    }elseif($glue =='notin'){
+                        $glue = '!=';
+                    }
+				}elseif($c >1){
+                    if($glue =='='){
+                        $glue = 'in';
+                    }elseif($glue =='!='){
+                        $glue = 'notin';
+                    }
 				}
 			} elseif ($glue == 'in') {
 				$glue = '=';
