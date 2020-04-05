@@ -417,7 +417,7 @@ function base($Type = 'DECODE', $string='', $key = '', $expiry = 0) {
 function stripTags($str,$len=0){
 	if(is_array($str)){
 		foreach($str as $k => $v){
-			$str[$k] = stripTags($v,$len, $type);
+			$str[$k] = stripTags($v,$len);
 		}
 	}else{
 		$str = str_replace(['&nbsp;','&#160;'],'',$str);
