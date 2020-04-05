@@ -35,9 +35,21 @@ class Filter{
      * @param string $str
      * @return string
      */
-    function text($str=''){
-        $str = chtmlspecialchars(strip_tags($str));
+    function text($str='', $len=0){
+        $str = chtmlspecialchars(stripTags($str, $len));
         return $str;
+    }
+
+    /**
+     * 过滤日期格式的字符串
+     * @param string $str
+     * @return string $str
+     */
+    function date($str=''){
+        $str = trim($str);
+        if(preg_match('/[0-9]{4}[-|年\/][0-9]{1,2}[-|月\/][0-9]{1,2}(\s+[0-9]{1,2}\:[0-5]{1,2}(\:[0-9]{1,2})?)?/', $str)){
+            return $str;
+        }
     }
 
     /**

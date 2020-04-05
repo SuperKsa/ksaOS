@@ -14,6 +14,14 @@ if(!defined('KSAOS')) {
 }
 
 class Request{
+
+    static function page($limit=20){
+        $page = max(1, self::data('page','int'));
+        $limit = intval($limit);
+        $start = ($page - 1) * $limit;
+        return [$page, $start, $limit];
+    }
+
     /**
      * 获取当前的请求类型
      * @param null/string $type 需要判断的请求类型 如传递则认为是判断
@@ -34,14 +42,14 @@ class Request{
      * @param null $rule
      * @return array|mixed|null
      */
-    static function filterArr($fun, $value=null, $rule=null){
+    static function filterArr($fun, $value=null, $param=[]){
         $funName = __FUNCTION__;
         if(is_array($value)){
             foreach($value as $k => $val){
-                $value[$k] = self::$funName($fun, $val, $rule);
+                $value[$k] = self::$funName($fun, $val, $param);
             }
         }else{
-            return call_user_func_array($fun, [$value, $rule]);
+            return call_user_func_array($fun, array_merge([$value],$param));
         }
         $value = $value ? $value : false;
         return $value;
@@ -56,16 +64,22 @@ class Request{
     static function filter($value=null, $rule=null){
         //规则必须存在 并且值可用
         if($rule && is_string($rule) && $value){
-
+            $param = [];
+            if(strrpos($rule,'/') === false){
+                //如果规则参数的处理
+                list($rule, $param) = explode(':',$rule);
+                $rule = trim($rule);
+                $param = $param ? explode(',',$param) : [];
+            }
             //只要出现下划线 一律认为是正则
             if(strrpos($rule,'/') >0){
-                $value = self::filterArr([Filter::class,'reg'],$value, $rule);
+                $value = self::filterArr([Filter::class,'reg'], $value, [$rule]);
             //从Filter类库中找对应函数处理
             }elseif(is_callable([Filter::class, $rule])){
-                $value = self::filterArr([Filter::class,$rule],$value);
+                $value = self::filterArr([Filter::class,$rule], $value, $param);
             //当前是否有可用函数
             }elseif(strpos($rule,'/') === false && is_callable($rule)){
-                $value = self::filterArr($rule,$value);
+                $value = self::filterArr($rule,$value, $param);
             }
         }
         //过滤器最后return的值不能是null（因为null表示值未传递、未提交）
