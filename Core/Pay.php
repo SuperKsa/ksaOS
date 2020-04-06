@@ -21,11 +21,16 @@ class Pay{
     }
 
     /**
-     * 生成一条不重复订单编号 24位
+     * 生成一条不重复订单编号 18-24位
      * 0-14位固定日期（秒级） 15-24位为自增ID
      * 依靠redis完成自增值机制
+     * @param int $N 需要生成多少位(默认20) 值范围18-24
+     * @return false|string
      */
-    static function orderCode(){
+    static function orderCode($N=20){
+        $N = $N < 18 ? 18 : $N;
+        $N = $N > 24 ? 24 : $N;
+        $N = $N - 14;//前缀日期固定14位 得到剩余补位数量
         $cacheK = '_orderCode_';
         //0-14位固定日期（秒级） 15-24位为自增
         $str = date('YmdHis');
@@ -38,7 +43,7 @@ class Pay{
             $X ++;
         }
         Cache::RAM('set',$cacheK,$X,0);
-        $str .= str_pad($X,10,'0', STR_PAD_LEFT);
+        $str .= str_pad($X,$N,'0', STR_PAD_LEFT);
         return $str;
     }
 
