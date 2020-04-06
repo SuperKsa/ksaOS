@@ -566,3 +566,29 @@ function CSS_px2rem($str='',$N=100){
     },$str);
     return $new;
 }
+
+/**
+ * 提取一个循环列表中指定字段 值集合
+ * 用法：
+ *      $uids = loopFieldValue($list, 'uid');
+ *      list($uids, $goodsIDs) = loopFieldValue($list, ['uid','goodsID']);
+ *
+ * @param array $data 循环列表数据
+ * @param array $keys 需要提取的字段 key 或 [key1,key2]
+ * @return array 根据$keys参数 顺序返回
+ */
+function loopFieldValue($data=[],$keys=[]){
+    $dt = [];
+    foreach($data as $value){
+        if(is_array($keys)){
+            foreach($keys as $k => $v){
+                if(isset($value[$v])){
+                    $dt[$k][$value[$v]] = $value[$v];
+                }
+            }
+        }elseif(isset($value[$keys])){
+            $dt[$value[$keys]] = $value[$keys];
+        }
+    }
+    return $dt;
+}
