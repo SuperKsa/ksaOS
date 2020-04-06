@@ -477,7 +477,7 @@ class DB{
 		$this->tableLink();
 		$ret = self::$DB->fetch_count($sql, $silent, false);
 		$this->__cache('set',$ret);//写缓存
-		return intval($ret);
+		return $ret;
 	}
 	
 	
@@ -627,9 +627,10 @@ class DB{
             $val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
             $val = caddslashes($val);
         }
+
 		switch($tp){
 			case 'int': //纯数字
-				$val += 0; break;
+				$val = preg_replace('/[^0-9]/','',$val); break;
 			case 'abc': //纯字母
 				$val = preg_replace('/[^a-z]/i','',$val); break;
 			case 'abcs': //纯字母、下划线、横杠
