@@ -15,6 +15,18 @@ if(!defined('KSAOS')) {
 
 class Request{
 
+    /**
+     * 获取当前访问地址
+     * @return mixed
+     */
+    static function url(){
+        return $_SERVER['REQUEST_URI'];
+    }
+    /**
+     * 获取当前分页请求
+     * @param int $limit 每页数量
+     * @return array [int当前页码, int起始数量, int每页数量]
+     */
     static function page($limit=20){
         $page = max(1, self::data('page','int'));
         $limit = intval($limit);
@@ -63,7 +75,7 @@ class Request{
      */
     static function filter($value=null, $rule=null){
         //规则必须存在 并且值可用
-        if($rule && is_string($rule) && $value){
+        if($rule && is_string($rule) && !is_null($value)){
             $param = [];
             if(strrpos($rule,'/') === false){
                 //如果规则参数的处理
@@ -99,6 +111,7 @@ class Request{
      * @return array|string|null null=变量不存在（未传递、未提交）
      */
     static function _dt($data=[], $field=null, $rule=null, $deft=null){
+
         //如果规则为字符串 且 绝对为空 则认为是null
         $rule = $rule === '' ? null : $rule;
         //输出原始数据 规则===false不存在 字段不存在
