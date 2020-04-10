@@ -29,8 +29,8 @@ class Attach{
 	
 	/**
 	 * 生成附件分表ID
-	 * @param type $idtype
-	 * @param type $id
+	 * @param string $idtype
+	 * @param int $id
 	 * @return int
 	 */
 	public static function tableID($idtype, $id){
@@ -41,11 +41,11 @@ class Attach{
 	
 	/**
 	 * 临时图片转正式图片
-	 * @param type $aid 临时图片aid （单个）
-	 * @param type $idtype 模块标识 （可选）
-	 * @param type $id
+	 * @param int $aid 临时图片aid （单个）
+	 * @param string $idtype 模块标识 （可选）
+	 * @param int $id
 	 */
-	public static function tmp2off($aid, $idtype, $id){
+	public static function tmp2off($aid='', $idtype='', $id=''){
 		$aid = intval($aid);
 		$idtype = self::idtype($idtype);
 		APP::hook(__CLASS__ , __FUNCTION__);
@@ -81,7 +81,7 @@ class Attach{
 	 * @param int $aid 附件ID (支持多个)
 	 * @param string $idtype 模块标识 （可选）
 	 * @param int $id 模块ID （可选 支持多个 必须存在$idtype）
-	 * @param type $isTmp 是否为临时附件 1=是[默认] 0=否
+	 * @param int $isTmp 是否为临时附件 1=是[默认] 0=否
 	 */
 	public static function del($idtype, $aid, $id, $isTmp=0){
 		$aid = ints($aid,1);
@@ -130,10 +130,10 @@ class Attach{
 	
 	/**
 	 * 直接删除文件函数
-	 * @param type $idtype
-	 * @param type $src
-	 * @param type $isSyn
-	 * @return type
+	 * @param string $idtype
+	 * @param string $src
+	 * @param int $isSyn
+	 * @return string
 	 */
 	public static function __delFile($idtype, $src, $isSyn=0){
 		$path = self::Path($idtype, $src);
