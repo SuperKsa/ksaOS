@@ -68,7 +68,7 @@ class Attach{
 					if($data['aid'] > 0){
 						DB('attach_'.$tableID)->insert($data);
 					}
-					self::del($aid, 'temp', 0, 1);
+					self::del('temp', $aid, $id, 1);
 					return $data;
 				}
 			}
