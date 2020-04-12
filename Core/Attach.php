@@ -88,7 +88,7 @@ class Attach{
 		$id = ints($id,1);
 		$idtype = self::idtype($idtype);
 		APP::hook(__CLASS__ , __FUNCTION__);
-		if($aid){
+		if($aid || $id){
 			$where = [];
 			if($aid){
 				$where = ['aid'=>$aid];
