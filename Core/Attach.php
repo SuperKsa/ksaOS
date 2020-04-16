@@ -22,9 +22,8 @@ class Attach{
 	 * @return string
 	 */
 	public static function idtype($idtype){
-		if(in_array($idtype,['temp', 'article','shop','goods','user','avatar'])){
-			return $idtype;
-		}
+        $idtype = trim($idtype);
+        return $idtype;
 	}
 	
 	/**
@@ -38,6 +37,20 @@ class Attach{
         $id = substr($id,-1); //取最后一位作为分表ID
 	    return $id;
 	}
+
+    /**
+     * 返回临时图片DB数据
+     * @param int $aid
+     * @param int $uid
+     * @return mixed
+     */
+	public static function tmpData($aid=0, $uid=0){
+	    $where = ['int:aid'=>$aid];
+	    if($uid){
+            $where['int:uid'] = $uid;
+        }
+        return DB('attach_temp')->where($where)->fetch_first();
+    }
 	
 	/**
 	 * 临时图片转正式图片
@@ -50,7 +63,7 @@ class Attach{
 		$idtype = self::idtype($idtype);
 		APP::hook(__CLASS__ , __FUNCTION__);
 		if($idtype && $aid >0){
-			$data = DB('attach_temp')->where('aid',$aid)->fetch_first();
+			$data = self::tmpData($aid);
 			
 			if($data){
 				$tempFile = ROOT.self::Path('temp', $data['src']);
