@@ -251,14 +251,14 @@ function roundF($val='',$N=0){
  * @param type $flags
  * @return type
  */
-function chtmlspecialchars($string='', $flags = null) {
+function chtmlspecialchars($string='', $flags = ENT_QUOTES) {
 	if(is_array($string)) {
 		foreach($string as $key => $val) {
 			$string[$key] = chtmlspecialchars($val, $flags);
 		}
 	} else {
 		if($flags === null) {
-			$string = str_replace(['&', '"', '<', '>'], ['&amp;', '&quot;', '&lt;', '&gt;'], $string);
+			$string = str_replace(['&', '"',"'", '<', '>'], ['&amp;', '&quot;','&lsquo;', '&lt;', '&gt;'], $string);
 			if(strpos($string, '&amp;#') !== false) {
 				$string = preg_replace('/&amp;((#(\d{3,5}|x[a-fA-F0-9]{4}));)/', '&\\1', $string);
 			}
@@ -422,7 +422,6 @@ function stripTags($str,$len=0){
 	}else{
 		$str = str_replace(['&nbsp;','&#160;'],'',$str);
 		$str = preg_replace('/<([a-z]|\/)[^>]+>/i','',$str);
-		$str = chtmlspecialchars($str);
 		$str = chtmlspecialchars(strip_tags($str));
 		if($len >0){
 			$str = mb_substr($str,0,$len);
@@ -591,4 +590,19 @@ function loopFieldValue($data=[],$keys=[]){
         }
     }
     return $dt;
+}
+
+function array_merges(&$a,$b){
+    foreach($b as $key => $value){
+        if(is_array($value)){
+            if(!isset($a[$key])){
+                $a[$key] = $value;
+            }elseif(is_array($a[$key])){
+                array_merges($a[$key], $value);
+            }
+        }else{
+            $a[$key] = $value;
+        }
+    }
+    return $a;
 }
