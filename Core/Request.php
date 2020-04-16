@@ -170,9 +170,11 @@ class Request{
      */
     static function orgData($M=''){
         $M = strtoupper($M);
-        if(!$M || !in_array($M,['GET','POST'])){
+        if(!$M || !in_array($M,['GET'])){
             parse_str(file_get_contents('php://input'), $inputdata);
         }
+        $inputdata = (array)$inputdata;
+
         switch ($M){
             case 'POST':
                 $data = $_POST;
@@ -191,7 +193,21 @@ class Request{
                 break;
         }
         if(!$M){
-            $data = array_merge($data, $inputdata);
+            $data = array_merges($data, $inputdata);
+        }
+        if($_FILES){
+            foreach($_FILES as $key => $value){
+                $data[$key] = $data[$key] ? $data[$key] : [];
+                if(is_array($value['name'])){
+                    foreach($value as $k => $val){
+                        foreach($val as $k1 => $v1){
+                            $data[$key][$k1][$k] = $v1;
+                        }
+                    }
+                }else{
+                    $data[$key] = $value;
+                }
+            }
         }
         return $data;
     }
