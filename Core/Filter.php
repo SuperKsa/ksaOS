@@ -36,7 +36,21 @@ class Filter{
      * @return string
      */
     function text($str='', $len=0){
-        $str = chtmlspecialchars(stripTags($str, $len));
+
+        if(is_array($str)){
+            foreach($str as $k => $v){
+                $str[$k] = self::text($v,$len);
+            }
+        }else{
+            //先干掉script
+            $str = preg_replace('/<\s+?script[\s\S]*?<\s+?\/\s+?script\s+?>/i','',$str);
+            $str = str_replace(['&nbsp;','&#160;'],'',$str);
+            //$str = strip_tags($str);
+            if($len >0){
+                $str = mb_substr($str,0,$len);
+            }
+            $str = htmlspecialchars($str,ENT_QUOTES, 'UTF-8');
+        }
         return $str;
     }
 
@@ -45,9 +59,21 @@ class Filter{
      * @param string $str
      * @return string $str
      */
-    function date($str=''){
+    function date($str='', $t=''){
         $str = trim($str);
-        if(preg_match('/[0-9]{4}[-|年\/][0-9]{1,2}[-|月\/][0-9]{1,2}(\s+[0-9]{1,2}\:[0-5]{1,2}(\:[0-9]{1,2})?)?/', $str)){
+        if($t =='ymd'){
+            if(preg_match('/^([0-9]{4})[-|年\/]([0-9]{1,2})[-|月\/]([0-9]{1,2})[日]?$/', $str)){
+                return $str;
+            }
+        }elseif($t =='hi'){
+            if(preg_match('/^[0-9]{1,2}\:[0-5]{1,2}$/', $str)){
+                return $str;
+            }
+        }elseif($t =='his'){
+            if(preg_match('/^[0-9]{1,2}\:[0-5]{1,2}\:[0-9]{1,2}$/', $str)){
+                return $str;
+            }
+        }elseif(preg_match('/^[0-9]{4}[-|年\/][0-9]{1,2}[-|月\/][0-9]{1,2}(\s+[0-9]{1,2}\:[0-5]{1,2}(\:[0-9]{1,2})?)?$/', $str)){
             return $str;
         }
     }
@@ -121,7 +147,7 @@ class Filter{
      * @return null 成功返回原值
      */
     static function cnName($str=''){
-        return $str && preg_match("/^[\x{4e00}-\x{9fa5}]{2,8}$/u", $str) ? $str : false;
+        return $str && preg_match("/^[\x{4e00}-\x{9fa5}\s·\-]{2,8}$/u", $str) ? $str : false;
     }
 
     /**
