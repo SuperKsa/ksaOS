@@ -14,7 +14,10 @@ if(!defined('KSAOS')) {
 }
 
 class Request{
-
+    static function isAjax(){
+        global $C;
+        return $C['ajax'];
+    }
     /**
      * 获取当前访问地址
      * @return mixed
