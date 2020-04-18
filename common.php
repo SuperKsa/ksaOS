@@ -592,7 +592,13 @@ function loopFieldValue($data=[],$keys=[]){
     return $dt;
 }
 
-function array_merges(&$a,$b){
+/**
+ * 递归合并多维
+ * @param array $a
+ * @param array $b
+ * @return array
+ */
+function array_merges(&$a=[],$b=[]){
     foreach($b as $key => $value){
         if(is_array($value)){
             if(!isset($a[$key])){
@@ -605,4 +611,32 @@ function array_merges(&$a,$b){
         }
     }
     return $a;
+}
+
+/**
+ * 清理数组内指定值的行
+ *
+ * @param array $arr 传入数组
+ * @param string $t 清理规则 null=绝对等于null
+ * @return array
+ */
+function array_clears($arr=[], $t='null'){
+    $arr = array_filter($arr, function($v)use($t){
+        switch ($t){
+            case 'null':
+                return !is_null($v);
+            break;
+        }
+    });
+    return $arr;
+}
+
+/**
+ * 预处理列表数据中的各种字段
+ * 填充，格式化等等
+ * @param array $arr
+ * @param array $cfg
+ */
+function array_loops($arr=[],$cfg=[]){
+
 }
