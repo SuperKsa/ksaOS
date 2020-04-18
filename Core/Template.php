@@ -26,6 +26,7 @@ class template {
                 $fname = Files::name($sys[0]['file'], false);
                 $tpl = $fname.'_'.$sys[1]['function'];
             }
+
             if(!$dir) {
                 $F = $sys[0]['file'];
                 if (stripos($F,'ksaos/app.php') && strtolower($tpl) == 'common/msg' && strtolower($sys[1]['function']) == 'msg' && strtolower($sys[1]['class']) == 'ksaos\app') {
@@ -33,7 +34,6 @@ class template {
                 }
                 $dir = self::AutoTplDir($F, $tpl);
             }
-
         }
 
         return self::replace($tpl, $dir, $DirName);
@@ -57,9 +57,17 @@ class template {
      * @param string $dir 自动读取的路径地址(必须包含后缀名)
      * @return string
      */
-    public static function AutoTplDir($dir='', $tplFile=''){
-	    if($dir) {
-            $dir = Files::dir($dir);
+    public static function AutoTplDir($P='', $tplFile=''){
+	    if($P) {
+            $dir = Files::dir($P);
+            //入口文件也作为一个目录
+            $file = str_replace([ROOT,$dir],'', $P);
+            if(strpos($file,'/') === false){
+                $fileName = trim(preg_replace('/\.[^\.]*$/','', $file));
+                if($fileName){
+                    $dir .= '/'.$fileName;
+                }
+            }
             $dir = Files::path($dir);
             //去掉左边的绝对路径
             $dir = ltrim($dir, ROOT);
