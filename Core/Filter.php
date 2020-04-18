@@ -18,6 +18,18 @@ if(!defined('KSAOS')) {
 class Filter{
 
     /**
+     * 过滤为开关值(返回1或0)
+     * @param string $str
+     * @return int 返回：0=不存在(0|null|false|'') 1=存在
+     */
+    static function intif($str=''){
+        if(!$str || $str == 0 || $str === '' || is_null($str) || $str === false){
+            return 0;
+        }
+        return 1;
+    }
+
+    /**
      * 过滤所有非连续数字 支持负值 | -123a = -123 | 123a456=123 | -123-456=-123
      * @param string $str
      * @return string
