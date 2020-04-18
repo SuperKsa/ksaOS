@@ -109,21 +109,31 @@ function debugs(){
 
 /**
  * 重写trims 使其支持数组
- * @param type $dt 需要trim的string或array
- * @param type $isKey 是否需要处理键名 默认false=不需要
- * @return type
+ * @param array $dt 需要trim的string或array
+ * @param string $charlist 同trim第二个参数
+ * @return array
  */
-function trims($dt='',$isKey=false){
+function trims($dt='', $charlist=null){
 	if(is_array($dt)){
 		$data = [];
 		foreach($dt as $k => $v){
-			if($isKey) $k = trim($k);
-			$data[$k] = trims($v);
+			$data[$k] = trims($v,$charlist);
 		}
 	}else{
-		$dt = trim($dt);
+		$dt = trim($dt, $charlist);
 	}
 	return $dt;
+}
+
+function cstrpos($str, $find=[], $start=0) {
+    if($str && $find){
+        foreach((array)$find as $v) {
+            if(strpos($str, $v) !== false) {
+                return $v;
+            }
+        }
+    }
+    return false;
 }
 
 /**
