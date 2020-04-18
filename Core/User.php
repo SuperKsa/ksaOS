@@ -15,13 +15,35 @@ if(!defined('KSAOS')) {
 }
 
 class User{
-	
+    /**
+     * 获取用户信息
+     * @param int $id 用户ID，一个或数组
+     * @param string $select 需要的字段 默认*
+     * @return array 根据$id智能返回
+     */
+	static function info($id=0, $select='*'){
+	    $id = ints($id,1,1);
+	    if($id) {
+            $data = DB('user')->select($select)->where('uid', $id)->fetch_all('uid');
+            foreach ($data as $key => $value) {
+                if($value['avatar']) {
+                    $value['avatar'] = APP::Attach()->Url('avatar', $value['avatar']);
+                }
+                $data[$key] = $value;
+            }
+            if(!is_array($id)){
+                $data = $data[$id];
+            }
+        }
+	    return $data;
+    }
+
 	/**
 	 * 校验用户token是否有效并自动登录
 	 * @param string $token 用户token（选传）由当前类函数userlogin生成的token
 	 * @return string 已登录或成功返回user数据且附带token字段 否则=false
 	 */
-	static function isLogin(string $token=''){
+	static function isLogin($token=''){
 		global $C;
 		if($C['user']){
 			return $C['user'];
@@ -58,13 +80,13 @@ class User{
 	
 	/**
 	 * 用户登录(登录成功，写cookie：token并返回token串)
-	 * @global type $C
-	 * @param type $user 用户原始信息
-	 * @param type $account 登录帐号 (微信登录 值固定为WECHAT)
-	 * @param type $password 用户提交的明文密码(微信登录 值=WXopenid字段值)
-	 * @return boolean 成功返回user数据且附带token字段 否则=false
+	 * @global array $C
+	 * @param array $user 用户原始信息
+	 * @param string $account 登录帐号 (微信登录 值固定为WECHAT)
+	 * @param string $password 用户提交的明文密码(微信登录 值=WXopenid字段值)
+	 * @return string/boolean 成功返回user数据且附带token字段 否则=false
 	 */
-	static function Login(array $user=[], string $account='', string $password=''){
+	static function Login($user=[], $account='', $password=''){
 		global $C;
 		if($account && $password && $user && is_array($user) && isset($user['uid']) && $user['password']){
             $PWstatus = false;
@@ -111,10 +133,10 @@ class User{
 	/**
 	 * 校验用户token是否有效
 	 * @param string $token 需要校验的token值
-	 * @param type $ck 混淆密钥（可选）
+	 * @param string $ck 混淆密钥（可选）
 	 * @return boolean|array 成功返回用户数据且附带token字段 否则false
 	 */
-	static function checkToken(string $token='', $ck=''){
+	static function checkToken($token='', $ck=''){
 		$decodetoken = base('DECODE',$token);
 		list($uid,$password) = explode('_', $decodetoken);
 		$uid = intval($uid);
@@ -133,7 +155,7 @@ class User{
 	/**
 	 * 根据用户信息生成一条token
 	 * @param array $user 用户信息
-	 * @param type $ck 混淆密钥（可选）
+	 * @param string $ck 混淆密钥（可选）
 	 * @return string token
 	 */
 	static function getToken($user=[], $ck=''){
@@ -146,9 +168,9 @@ class User{
 	
 	/**
 	 * 生成token中的密码混淆
-	 * @param type $user 指定用户信息
-	 * @param type $ck 混淆密钥（可选）
-	 * @return type 成功返回加密后的密码
+	 * @param array $user 指定用户信息
+	 * @param string $ck 混淆密钥（可选）
+	 * @return string 成功返回加密后的密码
 	 */
 	static function __tokenPW($user=[], $ck=''){
 		$pw = '';
@@ -160,7 +182,7 @@ class User{
 	
 	/**
 	 * 生成密码与混淆字符
-	 * @param type $pw 需要生成的密码明文
+	 * @param string $pw 需要生成的密码明文
 	 * @return array 返回：参数1=密码 参数2=混淆字符
 	 */
 	static function getPwSign($pw){
