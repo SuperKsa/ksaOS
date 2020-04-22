@@ -51,42 +51,37 @@ class Route{
 		}
 		define('ROUTE_INIT___', true);
 		
-		$Class = 'ksaOS\APP';
-		$Fun = $C['R-1'];
-		
+
+
 		$loadFile = 0;
 		$Dir = PATHS;
 		$R = explode('/', $C['R']);
-		$Rn = count($R);
-		$Fun = $Rn >3 ? array_pop($R) : end($R);
-		$Loads = [];
-
-        foreach($R as $key => $value){
-            if($key >2){
-                unset($R[$key]);
-            }
-        }
         //如果路由参数小于3个 则用index补充为固定三个
-        for($i=0; $i<3-$Rn; $i++){
+        for($i=0; $i<= 3-count($R); $i++){
             $R[] = 'index';
         }
-        $classList = [];
-		foreach($R as $key => $value){
 
+        $Class = 'ksaOS\APP';
+        $Loads = [];
+        $classList = [];
+        $FunK = 0;
+		foreach($R as $key => $value){
             if(is_dir($Dir)){
                 //前3层检查语言包/公共包
                 if($key <3) {
                     //检测该目录下的语言包 并加载
                     if (is_file($Dir . '_lang.php')) {
-                        $Loads[] = $Dir.'_lang.php';
+                        $Loads[] = ['class'=>$Class, 'file'=>$Dir.'_lang.php'];
                     }
                     //检测该目录下的公共文件 并加载
                     if (is_file($Dir . '_common.php')) {
-                        $Loads[] = $Dir.'_common.php';
+                        $Loads[] = ['class'=>$Class, 'file'=>$Dir.'_common.php'];
                     }
                 }
+                //查找路由脚本是否存在， 并载入
                 if(is_file($Dir.$value.'.php')) {
-                    $Loads[] = $Dir.$value.'.php';
+                    $Loads[] = ['key'=>$key, 'class'=>$Class, 'file'=>$Dir.$value.'.php'];
+                    $FunK = $key;
                 }
 
                 $Class .= '_'.$value;
@@ -99,19 +94,25 @@ class Route{
                 $Dir .= $value.'/';
 			}
 		}
-
+		//提取路由已匹配到文件的后一个序列作为触发函数
+        $FunK ++;
+        $Fun = $R[$FunK] ? $R[$FunK] : 'index';
+		//触发函数第一个字符如果是数字 则以index作为触发函数
+        $Fun = is_numeric(substr($Fun,0,1)) ? 'index' : $Fun;
 
 		$__M_FunInit = 0;
 		if($Loads){
             foreach($Loads as $value){
-                include_once $value;
+                include_once $value['file'];
             }
+
             //class逐级检查，取存在的最后一个new
             foreach($classList as $key => $value){
                 if(!class_exists($value,false)){
                     unset($classList[$key]);
                 }
             }
+
             $Class = end($classList);
             if($Class) {
                 if (class_exists($Class, false)) {
@@ -125,9 +126,6 @@ class Route{
                 }
                 if (method_exists($OBJ, 'commonView')) {
                     $OBJ->commonView();
-                }
-                if (!method_exists($OBJ, $Fun)) {
-                    $Fun = 'index';
                 }
             }
 			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
