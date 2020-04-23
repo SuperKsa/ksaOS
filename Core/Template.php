@@ -31,11 +31,13 @@ class template {
                 $F = $sys[0]['file'];
                 if (stripos($F,'ksaos/app.php') && strtolower($tpl) == 'common/msg' && strtolower($sys[1]['function']) == 'msg' && strtolower($sys[1]['class']) == 'ksaos\app') {
                     $F = $sys[1]['file'];
+                    if(strpos($F, ROOT.'ksaOS/Core/') === 0){
+                        $F = PATHS.'model/.';
+                    }
                 }
                 $dir = self::AutoTplDir($F, $tpl);
             }
         }
-
         return self::replace($tpl, $dir, $DirName);
     }
 
@@ -60,15 +62,8 @@ class template {
     public static function AutoTplDir($P='', $tplFile=''){
 	    if($P) {
             $dir = Files::dir($P);
-            //入口文件也作为一个目录
-            $file = str_replace([ROOT,$dir],'', $P);
-            if(strpos($file,'/') === false){
-                $fileName = trim(preg_replace('/\.[^\.]*$/','', $file));
-                if($fileName){
-                    $dir .= '/'.$fileName;
-                }
-            }
             $dir = Files::path($dir);
+
             //去掉左边的绝对路径
             $dir = ltrim($dir, ROOT);
             //去掉左边的缓存路径
