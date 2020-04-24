@@ -34,6 +34,14 @@ class Route{
 		'O'=>'index', //功能 默认值
 		'D'=>'index' //动作 默认值
 	];
+
+	static function Fun($str=null){
+	    static $name = '';
+	    if($str){
+            $name = $str;
+        }
+	    return $name;
+    }
 	
 	/**
 	 * 入口文件执行函数
@@ -99,8 +107,10 @@ class Route{
         $Fun = $R[$FunK] ? $R[$FunK] : 'index';
 		//触发函数第一个字符如果是数字 则以index作为触发函数
         $Fun = is_numeric(substr($Fun,0,1)) ? 'index' : $Fun;
+        self::Fun($Fun);
+        unset($Fun);
 
-		$__M_FunInit = 0;
+		$isInit = 0;
 		if($Loads){
             foreach($Loads as $value){
                 include_once $value['file'];
@@ -121,21 +131,20 @@ class Route{
                 if (method_exists($OBJ, 'common')) {
                     $OBJ->common();
                 }
-                if (method_exists($OBJ, 'commonPost')) {
-                    $OBJ->commonPost();
-                }
-                if (method_exists($OBJ, 'commonView')) {
-                    $OBJ->commonView();
-                }
             }
-			if($OBJ && $Fun && method_exists($OBJ, $Fun)){
+            $Fun = self::Fun();
+            //Fun不能为common 并且 是一个公开函数
+			if($OBJ && $Fun && strtolower($Fun) !='common' && method_exists($OBJ, $Fun) && is_callable([$OBJ, $Fun])){
 				$OBJ->$Fun();
-				$__M_FunInit = 1;
-				return true;
+                $isInit = 1;
 			}
 		}
 
-		if(!$__M_FunInit){
+		if(!$isInit){
+		    //找不到初始化函数时执行回调
+            if (method_exists($OBJ, 'NotFound')) {
+                $OBJ->NotFound();
+            }
             header('HTTP/1.1 404 Not Found');
             exit;
 		}

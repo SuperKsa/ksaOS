@@ -48,7 +48,7 @@ class Files{
 	 * @param string $mode
 	 * @return boolean
 	 */
-	public static function mkdir(string $dir, $mode = 0777){
+	public static function mkdir($dir='', $mode = 0777){
 		if(!is_dir($dir)) {
 			self::mkdir(dirname($dir), $mode);
 			@mkdir($dir, $mode);
@@ -79,7 +79,7 @@ class Files{
 	/**
 	 * 判断是否是一个目录名称
 	 * 目录名不能包含：\<>/:*?"|'
-	 * @param type $name
+	 * @param string $name
 	 * @return boolean/name 成功返回目录名称
 	 */
 	public static function dirName($name=''){
@@ -88,9 +88,9 @@ class Files{
 
 	/**
 	 * 获取路径中的文件名
-	 * @param type $file 文件名或路径
-	 * @param type $isext 是否带后缀 1=是 0=否
-	 * @return fileNmae
+	 * @param string $file 文件名或路径
+	 * @param int $isext 是否带后缀 1=是 0=否
+	 * @return string
 	 */
 	public static function name($file, $isext=1){
 		$info = pathinfo($file);
@@ -154,7 +154,8 @@ class Files{
                 array_pop($file);
                 return implode('', $file);
             } else {
-                $ext = end(explode('.', $file));
+                $ext = explode('.', $file);
+                $ext = end($ext);
                 $ext = strtolower($ext);
                 //后缀名只支持字母与数字
                 if (!preg_match('/[^a-z0-9]/', $ext)) {
@@ -167,7 +168,7 @@ class Files{
 	/**
 	 * 获取本地图片信息
 	 * 也可用于判断是否为图片
-	 * @param type $src 本地路径
+	 * @param string $src 本地路径
 	 * @return array 是图片则输出数据 否则为空数组
 	 */
 	public static function picInfo($src=''){

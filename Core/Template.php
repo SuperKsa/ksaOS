@@ -116,11 +116,7 @@ class template {
      * @return string 渲染成功返回渲染后的文件地址（绝对路径）
      */
     public static function replace($tplfile='',$tplDir='',$DirName='') {
-        if(is_object($this)){
-            $new = $this;
-        }else{
-            $new = new self();
-        }
+        $new = new self();
         return $new->__replace($tplfile, $tplDir, $DirName);
     }
 
@@ -128,7 +124,7 @@ class template {
 	private function __replace($tplfile='',$tplDir='',$DirName='', $returnCode=false) {
 
 		if(!$tplfile){
-			return;
+			return null;
 		}
         //模板目录名称处理
         $DirName = $DirName ? $DirName.'/' :TPLDIR;
@@ -142,7 +138,7 @@ class template {
 		$tplDir = ($tplDir ? $tplDir : 'APP/').$DirName;
 
 
-		$cachedir = Files::dir($this::cacheDIR.'template/'.$tplDir.$tplfile);
+		$cachedir = Files::dir(self::cacheDIR.'template/'.$tplDir.$tplfile);
 		//创建缓存目录
 		Files::mkdir(ROOT.$cachedir, 0777);
 		$tplName = Files::name($tplfile);
