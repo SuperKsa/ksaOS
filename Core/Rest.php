@@ -13,7 +13,7 @@ if(!defined('KSAOS')) {
     exit('Error.');
 }
 
-class Request{
+class Rest{
     static function isAjax(){
         global $C;
         return $C['ajax'];
@@ -38,16 +38,48 @@ class Request{
     }
 
     /**
-     * 获取当前的请求类型
-     * @param null/string $type 需要判断的请求类型 如传递则认为是判断
+     * 获取URL路由部分值
+     * @param null/string $n 参数顺序 不传则返回所有 0=第一个
+     * @return mixed|null
+     */
+    static function m($n=null){
+        global $C;
+        $d = APP::$MOD;
+        return is_null($n) ? $d : ($d && isset($d[$n]) ? $d[$n] : null);
+    }
+
+    /**
+     * 校验请求类型是否正确
+     * @param null $type 需要判断的请求类型 GET/POST/PUT/DELETE/OPTIONS
+     * @param null $key 需要检查的键名
      * @return string
      */
-    static function M($type=''){
+    static function has($type=null, $key=null){
         $M = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] : $_SERVER['REQUEST_METHOD'];
         $M = strtoupper($M);
         if(!$type || ($type && strtoupper($type) == $M)){
-            return $M;
+            return $key ? self::orgData($M)[$key] : $M;
         }
+    }
+
+    /**
+     * 获取参数（所有请求） 参数用法参考 self::_dt()
+     */
+    static function data($field=null, $rule=null, $deft=null){
+        return self::_dt(self::orgData(), $field, $rule, $deft);
+    }
+
+    /**
+     * 获取GET参数 参数用法参考 self::_dt()
+     */
+    static function get($field=null, $rule=null, $deft=null){
+        return self::_dt(self::orgData('GET'), $field, $rule, $deft);
+    }
+    /**
+     * 获取POST参数 参数用法参考 self::_dt()
+     */
+    static function post($field=null, $rule=null, $deft=null){
+        return self::_dt(self::orgData('POST'), $field, $rule, $deft);
     }
 
     /**
@@ -212,40 +244,6 @@ class Request{
                 }
             }
         }
-        return $data;
-    }
-
-
-    /**
-     * 检查指定变量是否存在
-     * @param null $field 变量名
-     * @param string $M 请求方式 必须
-     * @return bool
-     */
-    static function has($field=null, $M=''){
-        if($M && self::M() == strtoupper($M)){
-            $data = self::orgData($M);
-            return isset($data[$field]);
-        }
-    }
-
-    /**
-     * 获取参数（所有请求） 参数用法参考 self::_dt()
-     */
-    function data($field=null, $rule=null, $deft=null){
-        return self::_dt(self::orgData(), $field, $rule, $deft);
-    }
-
-    /**
-     * 获取GET参数 参数用法参考 self::_dt()
-     */
-    function get($field=null, $rule=null, $deft=null){
-        return self::_dt(self::orgData('GET'), $field, $rule, $deft);
-    }
-    /**
-     * 获取POST参数 参数用法参考 self::_dt()
-     */
-    function post($field=null, $rule=null, $deft=null){
-        return self::_dt(self::orgData('POST'), $field, $rule, $deft);
+        return (array)$data;
     }
 }
