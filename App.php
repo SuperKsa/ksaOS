@@ -34,6 +34,7 @@ class APP extends Service{
 	private static $_app;
 	static $memory;
 	static $DB;
+    public static $MOD = []; //url路由部分的模块参数信息 http://***/mod0/mod1/mod2...
 	
 	public static function OBJ() {
 		return self::$_app;
@@ -58,7 +59,7 @@ class APP extends Service{
     /**
      * 全局提示类
      * @param string $msg 提示信息
-     * @param url $url 需要跳转的URL （为空时代表错误等级提示）
+     * @param string $url 需要跳转的URL （为空时代表错误等级提示）
      * @param array $data 补充需要输出的数组
      */
     public static function Msg($msg='',$url='',$data=[]){
@@ -77,16 +78,15 @@ class APP extends Service{
 	 * 静态初始化本类
 	 * Woker框架不能使用此函数 应该使用 __Run()
 	 * 触发 new Service
-	 * @return type
 	 */
-	public static function Run($Fun=false){
+	public static function Run($Fun=null){
 		parent::hook(__CLASS__ , __FUNCTION__);
 		
 		global $C;
 		self::__Run();
 		
-		if(gettype($Fun) =='object'){
-			$Fun();
+		if($Fun && gettype($Fun) =='object'){
+			call_user_func($Fun);
 		}
 		self::Route()->Run();
 		self::__End();

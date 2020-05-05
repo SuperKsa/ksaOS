@@ -169,11 +169,12 @@ class Route{
 			$i ++;
 			$value = urldecode(trim($value));
 			$value = preg_replace('/[^a-z0-9_\-]/i','',$value);
-			if($value){
+			if(!is_null($value)){
 				$R[$k] = $value;
 				$rk = 'R-'.$i;
 				$C[$rk] = $value;
 				$C['MOD'][] = $value;
+				APP::$MOD[] = $value;
 			}
 		}
 		$C['R'] =  implode('/',$R);
