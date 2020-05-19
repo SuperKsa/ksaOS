@@ -39,13 +39,20 @@ class Rest{
 
     /**
      * 获取URL路由部分值
-     * @param null/string $n 参数顺序 不传则返回所有 0=第一个
+     * @param null/string $n 参数顺序 不传则返回所有 1=第一个
      * @return mixed|null
      */
     static function m($n=null){
         global $C;
         $d = APP::$MOD;
-        return is_null($n) ? $d : ($d && isset($d[$n]) ? $d[$n] : null);
+        if(is_null($n)){
+            return $d;
+        }
+        $n = intval($n);
+        if($n >0){
+            $n --;
+            return $d && isset($d[$n]) ? $d[$n] : null;
+        }
     }
 
     /**
