@@ -50,6 +50,7 @@ class User{
 		}
 		$user = self::checkToken($token);
 		if($user && $user['uid'] && $user['token']){
+            cookies('token',$token,86400 * 15); //token保持在线
 			unset($user['salt'],$user['password']);
 			$user['avatar'] = APP::Attach()->Url('avatar',$user['avatar']);
 			$user['token'] = $token;
