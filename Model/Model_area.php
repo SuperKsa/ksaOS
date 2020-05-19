@@ -27,11 +27,11 @@ class Model_area{
 
     /**
      * 判断指定地区ID组合是否存在
-     * @param $province 省ID
-     * @param $city 市ID
-     * @param $area 县ID
-     * @param $town 镇ID
-     * @return 输出对应地址
+     * @param int $province 省ID
+     * @param int $city 市ID
+     * @param int $area 县ID
+     * @param int $town 镇ID
+     * @return array 输出对应地址
      */
     static function address($province, $city, $area, $town){
         $data = self::All();
