@@ -158,7 +158,7 @@ class Wechat {
         ];
 
         if($PayCode && $total >0){
-
+            $strbody = mb_substr($strbody,0,25); //body不能超过25个字符
             $post = [
                 'body' => $strbody, //商品简单描述 100字内
                 'total_fee' => $total,//支付金额
