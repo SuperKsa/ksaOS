@@ -642,7 +642,7 @@ class DB{
             case 'json': //JSON支持
                 //入库直接将数组转为JSON
                 if($type){
-                    $val = $val && is_array($val) ? json_encode($val, JSON_UNESCAPED_UNICODE) : NULL;
+                    $val = $val && is_array($val) ? json_encode($val, JSON_UNESCAPED_UNICODE) : 'null';
                 //查询 封装处理 查询格式必须为'json:field'=>[jsonKEY,jsonVALUE]
                 }else{
                     $val = 'JSON_CONTAINS('.$key.',JSON_OBJECT(\''.$val[0].'\', \''.$val[1].'\'))';
