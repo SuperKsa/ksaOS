@@ -192,16 +192,20 @@ class template {
 			$Code = preg_replace_callback("/\{template\s+([a-z0-9_:\/\.\'\"\$]+)\}/is", function($a){return $this->tpltag($a['1']);}, $Code);//转换加载语句{template xx}
 		
 			$Code = preg_replace("/\{(\\\$[a-zA-Z0-9_\-\>\[\]\'\"\$\.\x7f-\xff]+)\}/s", "<?=\\1?>", $Code);//变量名预转换PHP
-			
-			
-			//多维变量相互转换整理为PHP
-			$var_regexp = "((\\\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*(\-\>)?[a-zA-Z0-9_\x7f-\xff]*)(\[[a-zA-Z0-9_\-\.\"\'\[\]\$\x7f-\xff]+\])*)";
-			$Code = preg_replace_callback("/$var_regexp/s", function($a){return $this->Quote('<?='.$a['1'].'?>');}, $Code);
-			$Code = preg_replace_callback("/(\<\?\=)?\<\?\=$var_regexp\?\>(\?\>)?/s", function($a){return $this->Quote('<?='.$a['2'].'?>');}, $Code);
+
+
+			//多维变量相互转换整理为PHP {$a} {$a[123]} {$a['1234']} {$a["123"]} {ANVS}
+			//$var_regexp = "((\\\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*(\-\>)?[a-zA-Z0-9_\x7f-\xff]*)(\[[a-zA-Z0-9_\-\.\"\'\[\]\$\x7f-\xff]+\])*)";
+			$Code = preg_replace_callback("/\{(\$[a-zA-Z0-9_\"\'\[\]\$]+)\}/s", function($a){return $a['1'] ? $this->Quote('<?='.$a['1'].'?>') : $a['0'];}, $Code);
+
+			//常量转换 必须是全大写
+            $Code = preg_replace_callback("/\{([A-Z]+)\}/s", function($a){return $a['1'] ? $this->Quote('<?='.$a['1'].'?>') : $a['0'];}, $Code);
+
 			//End
-			
-			
+
+
 			$Code = preg_replace_callback("/\{echo\s+(.+?)\}/is", function($a){return $this->Tags('<? echo '.$a['1'].'; ?>');}, $Code); //转换echo语句 {echo xx}
+
 			//if语句处理开始
 			$Code = preg_replace_callback("/\{if\s+(.+?)\}/is",  function($a){return $this->Tags('<? if('.$a['1'].') { ?>');}, $Code);
 			$Code = preg_replace_callback("/\{elseif\s+(.+?)\}/is", function($a){return $this->Tags('<? } elseif('.$a['1'].') { ?>');}, $Code);
@@ -209,18 +213,14 @@ class template {
 			$Code = preg_replace("/\{else\}/i", "<? } else { ?>", $Code);
 			$Code = preg_replace("/\{\/if\}/i", "<? } ?>", $Code);
 			//if End
-			
+
 			//Loop语句处理开始
 			$Code = preg_replace_callback("/\{loop\s+(\S+)\s+(\S+)\}/is", function($a){return $this->Tags('<? foreach('.$a['1'].' as '.$a['2'].') { ?>');}, $Code);
 			$Code = preg_replace_callback("/\{loop\s+(\S+)\s+(\S+)\s+(\S+)\}/is", function($a){return $this->Tags('<? foreach('.$a['1'].' as '.$a['2'].' => '.$a['3'].') { ?>');}, $Code);
 			$Code = preg_replace("/\{\/loop\}/i", "<? } ?>", $Code);
 			//Loop End
-			
-			//常量处理
-			$Code = preg_replace("/\{([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/s", "<?=\\1?>", $Code);
-			
-			//Block模块语句处理开始
-			$Code = preg_replace_callback("/\{block\s+([a-zA-Z0-9_\[\]]+)\}(.+?)\{\/block\}/is", function($a){return $this->Blocks($a['1'], $a['2']);}, $Code);
+
+
 			//Block End
 			$Code = '<?php //ThisUpdateEndTime:'.$file_time."\r\n".'namespace ksaOS; if(!defined(\'KSAOS\')){exit(\'Error.\');}'."\r\n".'?>'.$Code;//页头增加模板文件最后修改时间
 			
@@ -233,7 +233,7 @@ class template {
 			$Code = preg_replace("/ \?\>[\n\r]*\<\? /s", " ", $Code);
 			$Code = trim($Code);
 		}
-		
+
 		//模板代码写入缓存文件
 		$fp = file_put_contents($cachefile, $Code);
 		if($fp === false) {
@@ -275,21 +275,6 @@ class template {
 		$expr = str_replace('\"', '"', preg_replace("/\<\?\=(\\\$.+?)\?\>/s", "\\1", $expr));
 		$statement = str_replace("\\\"", "\"", $statement);
 		return $expr.$statement;
-	}
-
-	private function Blocks($var, $s) {
-		$s = str_replace('\\"', '"', $s);
-		$s = preg_replace("/<\?=\\\$(.+?)\?>/", "{\$\\1}", $s);
-		preg_match_all("/<\?=(.+?)\?>/", $s, $constary);
-		$constadd = '';
-		$constary[1] = array_unique($constary[1]);
-		foreach($constary[1] as $const) {
-			$constadd .= '$__'.$const.' = '.$const.';';
-		}
-		$s = preg_replace("/<\?=(.+?)\?>/", "{\$__\\1}", $s);
-		$s = str_replace('?>', "\n\$$var .= <<<EOF\n", $s);
-		$s = str_replace('<?', "\nEOF;\n", $s);
-		return "<?\n$constadd\$$var = <<<EOF\n".$s."\nEOF;\n?>";
 	}
 	
 	private function dates($str) {
