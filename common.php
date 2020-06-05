@@ -642,6 +642,49 @@ function array_clears($arr=[], $t='null'){
 }
 
 /**
+ * 数组递归求最大值
+ * @param array $arr
+ * @param string $field
+ * @return float|int
+ */
+function array_valueMax($arr=[], $field=''){
+    $num = 0;
+    foreach($arr as $value){
+        $v = $field ? $value[$field] : $value;
+        if(is_array($v)){
+            $v = array_valueMax($v, $field);
+        }
+        $v = floatval($v);
+        if($v > $num){
+            $num = $v;
+        }
+
+    }
+    return $num;
+}
+
+/**
+ * 数组递归求最小值
+ * @param array $arr
+ * @param string $field
+ * @return float|int
+ */
+function array_valueMin($arr=[], $field=''){
+    $num = 0;
+    foreach($arr as $value){
+        $v = $field ? $value[$field] : $value;
+        if(is_array($v)){
+            $v = array_valueMin($v, $field);
+        }
+        $v = floatval($v);
+        if($v < $num){
+            $num = $v;
+        }
+    }
+    return $num;
+}
+
+/**
  * 预处理列表数据中的各种字段
  * 填充，格式化等等
  * @param array $arr
