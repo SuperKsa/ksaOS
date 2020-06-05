@@ -98,7 +98,7 @@ class DB{
 	public function table($table, $as='', $on='', $join=''){
 		$join = $join ? strtoupper($join) : '';
 		$on = $on ? trims($on) : '';
-		if(($this->table && $as && in_array($join,['LEFT','RIGHT','INNER','FULL']) && $on && $this->tableJoin[$this->table]) || (!$this->table && $as)){
+		if(($this->table && $as && $on && $this->tableJoin[$this->table]) || (!$this->table && $as)){
 			if(is_array($on)){
 				foreach($on as $key => $value){
 					list($l,$r) = explode('=',$value);
@@ -329,11 +329,27 @@ class DB{
 		}elseif($idef =='delete'){
 			$sql[] = 'DELETE FROM';
 		}
-		
+
 		if($this->tableJoin){
 			$tableJoins = '';
 			foreach(array_keys($this->tableJoin) as $value){
-				$tableJoins .= ($this->tableJoin[$value][1] ? ' '.$this->tableJoin[$value][1].' JOIN ' : '').$this->tableName($value).' '.$this->tableJoin[$value][0].($this->tableJoin[$value][2] ? ' ON '.$this->tableJoin[$value][2] :'');
+                $tbd =  $this->tableJoin[$value];
+                if(in_array($tbd[1], ['LEFT','RIGHT','INNER','FULL'])){
+                    $tableJoins .= ' '.$tbd[1].' JOIN ';
+                }else{
+                    $tableJoins .= $tableJoins ? ', ' : '';
+                }
+                $tableJoins .= $this->tableName($value);
+                $tableJoins .= ' '.$tbd[0];
+                if(in_array($tbd[1], ['LEFT','RIGHT','INNER','FULL'])){
+                    $tableJoins .= ($tbd[2] ? ' ON ' . $tbd[2] : '');
+                }elseif($tbd[2]){
+                    $tmp = [['',$tbd[2]]];
+                    foreach($this->__where as $v){
+                        $tmp[] = $v;
+                    }
+                    $this->__where = $tmp;
+                }
 			}
 			$sql[] = $tableJoins;
 		}else{
@@ -642,7 +658,7 @@ class DB{
             case 'json': //JSON支持
                 //入库直接将数组转为JSON
                 if($type){
-                    $val = $val && is_array($val) ? json_encode($val, JSON_UNESCAPED_UNICODE) : 'null';
+                    $val = is_null($val) ? 'null' : (is_array($val) ? json_encode($val, JSON_UNESCAPED_UNICODE) : $val);
                 //查询 封装处理 查询格式必须为'json:field'=>[jsonKEY,jsonVALUE]
                 }else{
                     $val = 'JSON_CONTAINS('.$key.',JSON_OBJECT(\''.$val[0].'\', \''.$val[1].'\'))';
