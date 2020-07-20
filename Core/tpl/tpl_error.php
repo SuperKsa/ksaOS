@@ -32,9 +32,9 @@
 				<tr class="bg2"><td>File</td><td>Line</td><td>Code</td></tr>
 				{loop $phpmsg $msg}
 					<tr class="bg1">
-					<td>{$msg[file]}</td>
-					<td>{$msg[line]}</td>
-					<td>{$msg[function]}</td>
+					<td>{$msg['file']}</td>
+					<td>{$msg['line']}</td>
+					<td>{$msg['function']}</td>
 					</tr>
 				{/loop}
 			{else}
