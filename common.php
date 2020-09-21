@@ -505,6 +505,21 @@ function JSON($dt,$g=[]){
 }
 
 /**
+ * 直接通过AJAX返回，调用前台静态KSAUI组件进行交互
+ * @param  string  $funName 方法名称（区分大小写）
+ * @param  array  $param 传递参数 必须是数组，且按照KSAUI函数的参数顺序传递
+ */
+function KSAUI($funName, $param =[]){
+    JSON([
+        'KSAUI'=>[
+            'type'=> $funName,
+            'param'=> $param
+        ]
+    ]);
+    exit;
+}
+
+/**
  * JSON编码强制中文不转码
  * @param type $value 需要编码的数据
  * @return type
