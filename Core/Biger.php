@@ -73,9 +73,7 @@ class Biger{
 		if(!is_null($this->daemonize)){ $Worker->daemonize = $this->daemonize; }
 		if(!is_null($this->globalEvent)){ $Worker->globalEvent = $this->globalEvent; }
 		$Worker->onWorkerStart = function($worker){
-			echo "\n■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 			echo "■■■■■■■■■■■■■■■■ {$worker->name}启动中 ■■■■■■■■■■■■■■■■\n";
-			echo "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 			$this->onWorkerStart($worker);
 			if(!$this->debug){
 				$this->TimerAdd(1,function(){
@@ -94,9 +92,7 @@ class Biger{
 		$Worker->onClose = function($con){
 			$this->onClose($con);
 			$this->TimerDelAll();
-			echo "\n■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 			echo "■■■■■■■■■■■■■■■■■ 结束运行 ■■■■■■■■■■■■■■■■■■\n";
-			echo "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■\n";
 		};
 		$Worker->onWorkerReload = function($con){
 			$this->onWorkerReload($con);
