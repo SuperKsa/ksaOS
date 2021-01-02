@@ -8,7 +8,7 @@
  * @version V1.0
  * @file mysqli.php (KSAOS底层 / UTF-8)
  */
-namespace ksaOS\db;
+namespace ksaOS\Db;
 use PDO;
 if(!defined('KSAOS')) {
 	exit('Error.');
@@ -59,7 +59,6 @@ class Mysqls{
 			if($this->curlink){
 				$this->curlink->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 				$this->link[$sid] = $this->curlink;
-				$this->curlink = $this->curlink;
 				$this->curID = $sid;
 				$this->linkNum ++;
 				return $this->curlink;
