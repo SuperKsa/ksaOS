@@ -39,6 +39,55 @@ class Attach{
 	}
 
     /**
+     * 上传文件到临时目录中
+     * @param $files
+     * @return array
+     */
+	public static function tmpUpload($FileData){
+        global $C;
+        if($FileData && $C['uid']) {
+            $idtype = 'temp';
+            $Uploads = [];
+            //一律作为多个文件处理
+            if (is_array($FileData['name'])) {
+                foreach ($FileData['name'] as $key => $value) {
+                    $Uploads[] = [
+                        'name' => $value,
+                        'type' => $FileData['type'][$key],
+                        'tmp_name' => $FileData['tmp_name'][$key],
+                        'error' => $FileData['error'][$key],
+                        'size' => $FileData['size'][$key],
+                    ];
+                }
+            } else {
+                $Uploads[] = $FileData;
+            }
+
+            $data = [];
+            foreach ($Uploads as $key => $value) {
+                $files = APP::Upload($idtype, $value);
+                if ($files && is_array($files) && $files['size'] > 0) {
+                    $fdt = [
+                        'uid' => $C['uid'],
+                        'name' => $files['fileName'],
+                        'size' => $files['size'],
+                        'isPic' => $files['isPic'] ? 1 : 0,
+                        'ext' => $files['ext'],
+                        'src' => $files['path'],
+                        'width' => $files['picWidth'],
+                        'height' => $files['picHeight'],
+                        'dateline' => time()
+                    ];
+                    $fdt['aid'] = DB('attach_temp')->insert($fdt, true);
+                    $fdt['src'] = APP::Attach()->Url($idtype, $fdt['src']);
+                    $data[] = $fdt;
+                }
+            }
+        }
+        return $data;
+    }
+
+    /**
      * 返回临时图片DB数据
      * @param int $aid
      * @param int $uid
@@ -51,20 +100,21 @@ class Attach{
         }
         return DB('attach_temp')->where($where)->fetch_first();
     }
-	
-	/**
-	 * 临时图片转正式图片
-	 * @param int $aid 临时图片aid （单个）
-	 * @param string $idtype 模块标识 （可选）
-	 * @param int $id
-	 */
-	public static function tmp2off($aid='', $idtype='', $id=''){
+
+    /**
+     * 临时图片转正式图片
+     * @param string $aid 临时图片aid （单个）
+     * @param string $idtype 模块标识 （可选）
+     * @param string $id 对应数据ID
+     * @param int $uid 上传者uid
+     * @return array|mixed 成功返回array
+     */
+	public static function tmp2off($aid='', $idtype='', $id='', $uid=0){
 		$aid = intval($aid);
 		$idtype = self::idtype($idtype);
 		APP::hook(__CLASS__ , __FUNCTION__);
 		if($idtype && $aid >0){
-			$data = self::tmpData($aid);
-			
+			$data = self::tmpData($aid, $uid);
 			if($data){
 				$tempFile = ROOT.self::Path('temp', $data['src']);
 				$newFile = ROOT.self::Path($idtype, $data['src']);
@@ -81,7 +131,7 @@ class Attach{
 					if($data['aid'] > 0){
 						DB('attach_'.$tableID)->insert($data);
 					}
-					self::del('temp', $aid, $id, 1);
+					self::del('temp', $aid, $id);
 					return $data;
 				}
 			}
@@ -96,10 +146,11 @@ class Attach{
 	 * @param int $id 模块ID （可选 支持多个 必须存在$idtype）
 	 * @param int $isTmp 是否为临时附件 1=是[默认] 0=否
 	 */
-	public static function del($idtype, $aid, $id, $isTmp=0){
+	public static function del($idtype, $aid=0, $id=0){
 		$aid = ints($aid,1);
 		$id = ints($id,1);
 		$idtype = self::idtype($idtype);
+        $isTmp = $idtype == 'temp';
 		APP::hook(__CLASS__ , __FUNCTION__);
 		if($aid || $id){
 			$where = [];
@@ -115,12 +166,15 @@ class Attach{
 			if(!$where){
 				return false;
 			}
+            $delCount = 0;
 			if($isTmp){
 				foreach(DB('attach_temp')->where('aid',$aid)->fetch_all() as $value){
-					self::__delFile($idtype, $value['src'], $value['syndate']);
+					if(self::__delFile($idtype, $value['src'], $value['syndate'])){
+                        DB('attach_temp')->where('aid',$value['aid'])->delete();
+                        $delCount ++;
+                    }
 				}
-				DB('attach_temp')->where('aid',$aid)->delete();
-				return true;
+				return $delCount;
 			}else{
 				$tableDt = [];
 				foreach(DB('attach')->where($where)->fetch_all() as $value){
@@ -128,14 +182,16 @@ class Attach{
 				}
 				foreach($tableDt as $tbID => $aids){
 					foreach(DB('attach_'.$tbID)->where('aid',$aids)->fetch_all() as $value){
-						self::__delFile($idtype, $value['src'], $value['syndate']);
+						if(self::__delFile($idtype, $value['src'], $value['syndate'])){
+                            DB('attach_'.$tbID)->where('aid', $value['aid'])->delete();
+                            $delCount ++;
+                        }
 					}
-					DB('attach_'.$tbID)->where('aid',$aids)->delete();
 				}
-				if($tableDt){
+				if($delCount && $tableDt){
 					DB('attach')->where($where)->delete();
 				}
-				return true;
+				return $delCount;
 			}
 		}
 		return false;
@@ -189,5 +245,6 @@ class Attach{
             }
 			return $C['picurl'].self::Path($md, $file);
 		}
+		return '';
 	}
 }
