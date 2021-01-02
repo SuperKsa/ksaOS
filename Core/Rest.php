@@ -136,6 +136,14 @@ class Rest{
                 $value = self::filterArr($rule,$value, $param);
             }
         }
+        if(is_array($value)){
+            foreach($value as $k => $v){
+                if($v === false){
+                    unset($value[$k]);
+                }
+            }
+            $value = !$value ? false : $value;
+        }
         //过滤器最后return的值不能是null（因为null表示值未传递、未提交）
         $value = is_null($value) ? '' : $value;
         //过滤器最后return的值不能是布尔值false（）
@@ -252,5 +260,37 @@ class Rest{
             }
         }
         return (array)$data;
+    }
+
+    /**
+     * 获取前台提交数据并生成where条件
+     * 一个参数表示一个get键名，过滤条件以冒号分割
+     * where('test1', 'test2')
+     * where('test1:int', 'test2:text')
+     * where(['test1:int', '>='], 'test2:text');
+     * @return array
+     */
+    function where(){
+        $dt = self::data();
+
+        $param = func_get_args();
+        $where = [];
+        foreach($param as $value){
+            $factor = '';
+            $field = $value;
+            if(is_array($value)){
+                $field = $value[0];
+                $factor = $value[1];
+            }
+            $i = strpos($field, ':');
+            $isI = $i && $i > 0;
+            $k = !$isI ? $field : substr($field, 0, $i);
+            $filter = !$isI ? $field : substr($field, $i+1);
+            if(isset($dt[$k])){
+                $v = self::filter($dt[$k], $filter);
+                $where[] = $factor ? [$k, $factor, $v] : [$k, $v];
+            }
+        }
+        return $where;
     }
 }
