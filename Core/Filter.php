@@ -91,6 +91,16 @@ class Filter{
     }
 
     /**
+     * 获取指定日期时间戳
+     * @param type $time 指定日期或者时间戳(默认当前时间) 如该值小于20则处理为第二个参数值
+     * @param type $F 时间戳位数
+     * @return timestamp UTC时间戳 不足$F位则补0
+     */
+    public static function timestamp($time=NULL, $F=10){
+        return $time ? Dates::timestamp($time, $F) : '';
+    }
+
+    /**
      * 正则匹配
      * @param string $str 输入值
      * @param string $reg 正则
