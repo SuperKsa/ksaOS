@@ -169,11 +169,10 @@ class Attach{
             $delCount = 0;
 			if($isTmp){
 				foreach(DB('attach_temp')->where('aid',$aid)->fetch_all() as $value){
-					if(self::__delFile($idtype, $value['src'], $value['syndate'])){
-                        DB('attach_temp')->where('aid',$value['aid'])->delete();
-                        $delCount ++;
-                    }
+					self::__delFile($idtype, $value['src'], $value['syndate']);
 				}
+                DB('attach_temp')->where('aid',$aid)->delete();
+                $delCount ++;
 				return $delCount;
 			}else{
 				$tableDt = [];
@@ -182,11 +181,10 @@ class Attach{
 				}
 				foreach($tableDt as $tbID => $aids){
 					foreach(DB('attach_'.$tbID)->where('aid',$aids)->fetch_all() as $value){
-						if(self::__delFile($idtype, $value['src'], $value['syndate'])){
-                            DB('attach_'.$tbID)->where('aid', $value['aid'])->delete();
-                            $delCount ++;
-                        }
+						self::__delFile($idtype, $value['src'], $value['syndate']);
+                        $delCount ++;
 					}
+                    DB('attach_'.$tbID)->where('aid', $aids)->delete();
 				}
 				if($delCount && $tableDt){
 					DB('attach')->where($where)->delete();
