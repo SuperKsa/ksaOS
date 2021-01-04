@@ -493,7 +493,7 @@ class DB{
 		$this->tableLink();
 		$ret = self::$DB->fetch_count($sql, $silent, false);
 		$this->__cache('set',$ret);//写缓存
-		return $ret;
+		return intval($ret);
 	}
 	
 	

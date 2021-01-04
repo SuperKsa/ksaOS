@@ -288,7 +288,9 @@ class Rest{
             $filter = !$isI ? $field : substr($field, $i+1);
             if(isset($dt[$k])){
                 $v = self::filter($dt[$k], $filter);
-                $where[] = $factor ? [$k, $factor, $v] : [$k, $v];
+                if($v !== ''){
+                    $where[] = $factor ? [$k, $factor, $v] : [$k, $v];
+                }
             }
         }
         return $where;
