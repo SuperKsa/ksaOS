@@ -125,8 +125,8 @@ class Rest{
                 $rule = trim($rule);
                 $param = $param ? explode(',',$param) : [];
             }
-            //只要出现下划线 一律认为是正则
-            if(strrpos($rule,'/') >0){
+            //只要第一个字符是斜杠 一律认为是正则
+            if(strpos($rule,'/') === 0){
                 $value = self::filterArr([Filter::class,'reg'], $value, [$rule]);
             //从Filter类库中找对应函数处理
             }elseif(is_callable([Filter::class, $rule])){

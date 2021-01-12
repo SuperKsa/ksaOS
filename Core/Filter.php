@@ -43,6 +43,20 @@ class Filter{
     }
 
     /**
+     * 过滤所有非字母、数字、下划线的字符
+     * @param null $str 需要过滤的字符
+     * @param bool $isline 是否需要下划线_ 与 横线-
+     * @return string|string[]|null
+     */
+    static function intabc($str=NULL, $isline=false){
+        if($str !== NULL) {
+            $reg = $isline ? '/[^a-z0-9_\-]/i' : '/[^a-z0-9]/i';
+            $str = preg_replace($reg, '', $str);
+        }
+        return $str;
+    }
+
+    /**
      * 字符串剥离html标签并实体化
      * @param string $str
      * @return string
@@ -107,7 +121,6 @@ class Filter{
      * @return string 成功返回输入值
      */
     static function reg($str='', $reg=''){
-
         if(preg_match($reg, $str)){
             return $str;
         }
