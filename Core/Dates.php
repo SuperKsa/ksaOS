@@ -140,7 +140,6 @@ class Dates{
 		}else{
 			$str = self::times($time=0, $format);
 		}
-		$str = '<i title="'.self::times($time=0, $format).'">'.$str.'</i>';
 		return $str;
 	}
 	
