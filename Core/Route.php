@@ -85,6 +85,10 @@ class Route{
                     if (is_file($Dir . '_common.php')) {
                         $Loads[] = ['class'=>$Class, 'file'=>$Dir.'_common.php'];
                     }
+                    //检测该目录下的公共文件 并加载
+                    if (is_file($Dir . '_function.php')) {
+                        $Loads[] = ['class'=>$Class, 'file'=>$Dir.'_function.php'];
+                    }
                 }
                 //查找路由脚本是否存在， 并载入
                 if(is_file($Dir.$value.'.php')) {
