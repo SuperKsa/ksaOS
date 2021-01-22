@@ -50,7 +50,7 @@ class DB{
 	private $selects = [];
 	private $__where = [];
 	private $order = [];
-	private $limits = [];
+	private $limits = ['start'=>NULL, 'limit'=>NULL];
 	private $group = [];
 	private $__SQL = '';
 
@@ -267,6 +267,7 @@ class DB{
 			}
 			$this->order[] = [$args[0], $args[1]];
 		}
+
 		return $this;
 	}
 	
@@ -287,22 +288,40 @@ class DB{
 	
 	/**
 	 * 构造器 LIMIT
+     * 此处不做安全过滤 最后再进行
 	 * limit(1)		SQL解析：limit 1
 	 * limit(0,10)		SQL解析：limit 0,10
 	 * @return $this
 	 */
-	public function limit(){
-		$args = func_get_args();
-		$this->limits = [];
-		if(isset($args[0])){
-			$this->limits[] = intval($args[0]);
-		}
-		if(isset($args[1])){
-			$this->limits[] = intval($args[1]);
-		}
+	public function limit($start = NULL, $limit=NULL){
+	    //如果只有start 没有limit 则将start转给limit
+	    if($start && $limit === NULL){
+            $limit = $start;
+            $start = 0;
+        }
+        $this->limits['start'] = $start;
+        $this->limits['limit'] = $limit;
 		return $this;
 	}
-	
+
+    /**
+     * 构造器 分页
+     * 此处不做安全过滤 最后再进行
+     * @param null $page 查询的页码
+     * @param null $limit 每页查询的数量
+     * @return $this
+     */
+    public function page($page = NULL, $limit = NULL){
+        if($limit !== NULL){
+            $this->limits['limit'] = $limit;
+        }
+        if($page !== NULL && $this->limits['limit'] >= 0){
+            $page = max(0, intval($page));
+            $this->limits['start'] = ($page - 1) * $this->limits['limit'];
+        }
+        return $this;
+    }
+
 	public function tableName($table=''){
 		return self::$DB->pre.$table;
 	}
@@ -377,7 +396,23 @@ class DB{
 			$sql[] = $this->group ? 'GROUP BY '.implode(', ',$this->group) : '';
 		}
 		if(in_array($idef, ['select', 'delete']) && $this->limits){
-			$sql[] = 'LIMIT '.implode(',',$this->limits);
+		    $limit = [];
+
+		    if($this->limits['start'] !== NULL){
+                $this->limits['start'] = intval($this->limits['start']);
+		        if($this->limits['start'] >= 0){
+		            $limit[] = $this->limits['start'];
+                }
+            }
+            if($this->limits['limit'] !== NULL){
+                $this->limits['limit'] = intval($this->limits['limit']);
+                if($this->limits['limit'] >= 0){
+                    $limit[] = $this->limits['limit'];
+                }
+            }
+            if($limit){
+                $sql[] = 'LIMIT '.implode(',',$limit);
+            }
 		}
 		$sql = array_filter($sql);
 		$sql = implode(' ',$sql);
@@ -424,10 +459,10 @@ class DB{
 	 * @return array
 	 */
 	public function fetch_all($keyfield = '', $silent=false) {
+
 		if(!$this->table){
 			return [];
 		}
-		
 		$sql = $this->sql('select');
 		//取缓存
 		if(($ret = $this->__cache('get')) !== NULL){
@@ -445,6 +480,7 @@ class DB{
 		}
 		unset($ret);
 		$this->__cache('set',$data);//写缓存
+
 		return $data;
 	}
 	
@@ -457,7 +493,7 @@ class DB{
 		if(!$this->table){
 			return [];
 		}
-		if(!$this->limits){
+		if(!$this->limits['start'] && !$this->limits['limit']){
 			$this->limits = [0,1];
 		}
 		$sql = $this->sql('select');
