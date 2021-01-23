@@ -603,13 +603,9 @@ class DB{
 		foreach($data as $key => $val){
 			$s = '=';
 			if($step){
-				if(is_numeric($val)){
-					$k = substr($val, 0,1);
-					$val = abs($val);
-					if(in_array($k,['+','-'])){
-						$s = $s.' `'.$key.'` '.$k.' ';
-					}
-				}
+                $k = substr($val, 0,1);
+                $val = abs($val);
+                $s = $s.' `'.$key.'` '.($k =='-' ? '-' : '+');
 			}
             //如果值不存在 但值是数组、字符串 则调整值为NULL
             if(!$val && is_array($val)){
@@ -617,10 +613,9 @@ class DB{
             }
 			//送到修饰符处理步骤 进一步对val进行严格处理
             list($field, $val, $tp) = $this->__modify($key, $val,1);
-            $val = is_null($val) ? 'NULL' : '\''.$val.'\'';
+            $val = $step ? $val : (is_null($val) ? 'NULL' : '\''.$val.'\'');
 			$data[$key] = '`'.$field.'`'.$s.$val;
 		}
-
 		$set = implode(' , ',$data);
 		$sql = str_replace('{%idef%}',$set,$sql);
 		$this->tableLink();
