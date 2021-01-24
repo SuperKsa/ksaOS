@@ -21,11 +21,19 @@ class Wechat {
      * 获取微信基础 access_token
      * 缓存有效期 7200秒
      */
-    static function AccessToken(){
+    static function AccessToken($option=[]){
         global $C;
 
         $APPID = $C['setting']['WX_APPID'];
         $AppSecret = $C['setting']['WX_AppSecret'];
+        if($option){
+            if($option['AppID']){
+                $APPID = $option['AppID'];
+            }
+            if($option['AppSecret']){
+                $AppSecret = $option['AppSecret'];
+            }
+        }
         $accessToken = Cache('WX_ACCESSTOKEN');
         $accessToken = $accessToken ? json_decode($accessToken,true) : [];
 
@@ -47,6 +55,7 @@ class Wechat {
                 $access_token = $data['access_token'];
             }
         }
+
         return $access_token;
     }
 
@@ -108,19 +117,57 @@ class Wechat {
     }
 
     /**
+     * 小程序 获取用户openid
+     * @param string $code
+     * @param array $option
+     * @return array|mixed
+     */
+    static function UserInfoMini($code='', $option=[]){
+        global $C;
+
+        $APPID = $C['setting']['WX_APPID'];
+        $AppSecret = $C['setting']['WX_AppSecret'];
+        if($option){
+            if($option['AppID']){
+                $APPID = $option['AppID'];
+            }
+            if($option['AppSecret']){
+                $AppSecret = $option['AppSecret'];
+            }
+        }
+        $sendAPI = 'https://api.weixin.qq.com/sns/jscode2session?appid='.$APPID.'&secret='.$AppSecret.'&js_code='.$code.'&grant_type=authorization_code';
+
+        //拿用户access_token
+        $curl = Curls::send($sendAPI);
+
+        $data = $curl['data'] ? json_decode($curl['data'], true) : [];
+        return $data;
+    }
+
+    /**
      * 获取用户资料
      * @param string $code
      * @return array
      */
-    static function UserInfo($code=''){
+    static function UserInfo($code='', $option=[]){
         global $C;
-        $access_token = self::AccessToken();
+        $access_token = self::AccessToken($option);
 
         $APPID = $C['setting']['WX_APPID'];
         $AppSecret = $C['setting']['WX_AppSecret'];
+        if($option){
+            if($option['AppID']){
+                $APPID = $option['AppID'];
+            }
+            if($option['AppSecret']){
+                $AppSecret = $option['AppSecret'];
+            }
+        }
+        $sendAPI = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid='.$APPID.'&secret='.$AppSecret.'&code='.$code.'&grant_type=authorization_code';
 
         //拿用户access_token
-        $curl = Curls::send('https://api.weixin.qq.com/sns/oauth2/access_token?appid='.$APPID.'&secret='.$AppSecret.'&code='.$code.'&grant_type=authorization_code');
+        $curl = Curls::send($sendAPI);
+
         $data = $curl['data'] ? json_decode($curl['data'], true) : [];
         $token = $data['access_token'] ? $data['access_token'] : '';
         $openid = $data['openid'] ? $data['openid'] : '';

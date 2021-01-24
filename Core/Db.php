@@ -49,8 +49,9 @@ class DB{
 	//构造器变量
 	private $selects = [];
 	private $__where = [];
-	private $order = [];
+	private $orders = [];
 	private $limits = ['start'=>NULL, 'limit'=>NULL];
+	private $pages = 0;
 	private $group = [];
 	private $__SQL = '';
 
@@ -257,7 +258,7 @@ class DB{
 				$v = strtoupper($v);
 				if($k){
 					$v = $v ? $v : $def;
-					$this->order[] = [$k, $v];
+					$this->orders[] = [$k, $v];
 				}
 			}
 		}elseif($args[0] && !is_array($args[0]) && (!isset($args[1]) || $args[1] && !is_array($args[1]))){
@@ -265,7 +266,7 @@ class DB{
 			if(!in_array($args[1],['ASC','DESC'])){
 				$args[1] = $def;
 			}
-			$this->order[] = [$args[0], $args[1]];
+			$this->orders[] = [$args[0], $args[1]];
 		}
 
 		return $this;
@@ -315,10 +316,13 @@ class DB{
         if($limit !== NULL){
             $this->limits['limit'] = $limit;
         }
-        if($page !== NULL && $this->limits['limit'] >= 0){
-            $page = max(0, intval($page));
+
+        if($page !== NULL || $this->limits['limit'] >= 0){
+            $page = max(1, intval($page));
+            $this->pages = $page;
             $this->limits['start'] = ($page - 1) * $this->limits['limit'];
         }
+
         return $this;
     }
 
@@ -330,11 +334,13 @@ class DB{
 	 * 返回最终生成的SQL语句字符串
 	 */
 	public function sql($idef='select'){
-		if($this->order){
-			foreach($this->order as $k => $v){
-				$this->order[$k] = $v[0].' '.$v[1];
+		if($this->orders){
+			foreach($this->orders as $k => $v){
+				$this->orders[$k] = $v[0].' '.$v[1];
 			}
+
 		}
+
 		$sql = [];
 		
 		if($idef =='select'){
@@ -392,9 +398,11 @@ class DB{
 			$sql[] = 'WHERE '.implode(' AND ', $where);
 		}
 		if($idef =='select'){
-			$sql[] = $this->order ? 'ORDER BY '.implode(', ',$this->order) : '';
+			$sql[] = $this->orders ? 'ORDER BY '.implode(', ',$this->orders) : '';
 			$sql[] = $this->group ? 'GROUP BY '.implode(', ',$this->group) : '';
 		}
+
+
 		if(in_array($idef, ['select', 'delete']) && $this->limits){
 		    $limit = [];
 
@@ -416,7 +424,6 @@ class DB{
 		}
 		$sql = array_filter($sql);
 		$sql = implode(' ',$sql);
-
 		$this->__SQL = $sql;
 		return $sql;
 	}
@@ -450,6 +457,25 @@ class DB{
 
 	public function query($sql=''){
         return self::$DB->fetch_all($sql);
+    }
+
+    /**
+     * 分页SQL查询 查询之前必须使用 this->page() 函数初始化分页处理
+     * @param string $keyfield
+     * @return array 固定返回  page=当前页码 maxpage=最大页数 limit=每页数量 count=总数据量 list=列表
+     */
+    public function fetch_page($keyfield=''){
+        $select = $this->selects;
+        $order = $this->orders;
+        $this->selects = [];
+        $this->orders = [];
+        $count = $this->fetch_count();
+
+        $this->selects = $select;
+        $this->orders = $order;
+        $data = $count > 0 ? $this->fetch_all($keyfield) : [];
+        $maxPage = ceil($count / $this->limits['limit']);
+        return ['page'=>$this->pages, 'maxpage'=>$maxPage, 'limit'=>$this->limits['limit'], 'count' => $count, 'list'=>$data];
     }
 
 	/**

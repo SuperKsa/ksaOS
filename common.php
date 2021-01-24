@@ -495,11 +495,12 @@ function JSON($dt,$g=[]){
 		'uid' => $C['uid'],
 		'token' => $C['token'],
 		'user' => $user,
-		'msg' => $g['msg'] ? $g['msg'] : '',
-		'success' => $g['success'] ? $g['success'] : 0,
-		'locationUrl' => $g['locationUrl'] ? $g['locationUrl'] : '',
+		'msg' => '',
+		'success' => 0,
+		'locationUrl' => '',
 		'result' => $dt
 	];
+	$dt = array_merge($dt, $g);
 	echo json_encode($dt,JSON_UNESCAPED_UNICODE);
 	exit;
 }
