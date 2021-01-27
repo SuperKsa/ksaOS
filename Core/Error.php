@@ -28,13 +28,11 @@ class Error {
 	}
 	//警示类错误处理
 	static function Warn($code=0,$msg='', $file='', $line=0){
-		APP::hook(__CLASS__ , __FUNCTION__);
 		$Msg = self::clear($file).'('.$line.') '.$msg.'<br>';
 		//echo $Msg;
 	}
 	//致命性错误处理
 	static function Exc($E=NULL, $errorCode=0){
-		APP::hook(__CLASS__ , __FUNCTION__);
 		$Type = 'system';
 		if(isset($E->isDB)) {
 			$Type = 'db';

@@ -39,7 +39,17 @@ class Filter{
         if($tmp){
             return $tmp[0];
         }
-        return false;
+    }
+    /**
+     * 过滤所有非连续数字 支持负值 | -123a = -123 | 123a456=123 | -123-456=-123
+     * @param string $str
+     * @return string
+     */
+    static function intfloat($str='') {
+        preg_match('/-?[0-9]+(\.[0-9]+)/', $str, $tmp);
+        if($tmp){
+            return $tmp[0];
+        }
     }
 
     /**

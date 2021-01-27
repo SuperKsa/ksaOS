@@ -84,7 +84,7 @@ class Pay{
             $isTotalOK = 1;
             if($queryDt['success'] && $isTotalOK){
                 $returnData['success'] = 1;
-                __Pay_success_DatatypeStatus($Data,$Data['DataType'],$Data['DataID'],$Data['DataOrderCode']);
+                $this->__Pay_success_DatatypeStatus($Data,$Data['DataType'],$Data['DataID'],$Data['DataOrderCode']);
             }
             $returnData['msg'] = $queryDt['msg'];
             $returnData['isNew'] = 1; //首次确认状态 必须要与success=1一起判断支付成功
@@ -112,18 +112,17 @@ class Pay{
     static function create($orderCode, $PayType='', $dataType='', $dataID='', $Total=0, $Title='', $Summary=''){
         global $C;
         $uid = $C['uid'] && $C['uid']['user'] ? intval($C['uid']) : 0;
-
-        $orderCode = stripTags($orderCode, 100);
+        $orderCode = Filter::int($orderCode);
         $PayType = in_array($PayType,['wechat','alipay']) ? $PayType : '';
         $dataType = in_array($dataType,['goods','vip','expert']) ? $dataType : '';
-        $dataID = intval($dataID);
+        $dataID = Filter::int($dataID);
         $Total = floatval($Total);
-        $Title = stripTags($Title, 100);
-        $Summary = stripTags($Summary, 100);
+        $Title = stripTags($Title, 120);
+        $Summary = stripTags($Summary, 120);
         $returnData = [
             'success' => 0,
             'uid' => $uid,
-            'msg' => '创建支付订单失败',
+            'msg' => '',
             'PayData' => [] //返回的订单数据
         ];
 
@@ -132,60 +131,69 @@ class Pay{
             $user = DB('user')->uid($uid);
             if($user){
 
-                $insertDt = [
-                    'uid' => $uid,
-                    'DataID' => $dataID,
-                    'DataType' => $dataType,
-                    'DataOrderCode' => $orderCode,
-                    'title' => $Title,
-                    'total' => $Total,
-                    'PayType' => $PayType
-                ];
-                ksort($insertDt);
                 //订单失效时间
                 $orderOutTime = 180;
 
                 //检查是否有重复的待支付订单 数据类型 与数据订单号相同
-                $PayData = DB('pay_data')->where(['uid'=>$uid, 'DataID'=>$insertDt['DataID'],'DataType'=>$insertDt['DataType'],'DataOrderCode'=>$insertDt['DataOrderCode'],'Status'=>[0,1]])->fetch_first();
+                $PayData = DB('pay_data')->where(['uid'=>$uid, 'DataID'=>$dataID,'DataType'=>$dataType,'DataOrderCode'=>$orderCode, 'Status'=>[0,1]])->fetch_first();
                 if($PayData){
-                    //如果该订单已失效 则变更状态
+                    //如果该订单超过有效期  则变更为失效状态
                     if($PayData['createDate'] < time() - $orderOutTime){
                         DB('pay_data')->where('PayID', $PayData['PayID'])->update(['status'=>3]);
                         unset($PayData);
+                    }else{
+                        $PayData['payCreateData'] = json_decode($PayData['payCreateData'], true);
                     }
                 }
-
                 if(!$PayData){
                     //添加待支付订单数据到DB
-                    $insertDt = array_merge($insertDt,[
+                    $PayData = [
+                        'uid' => $uid,
+                        'DataID' => $dataID,
+                        'DataType' => $dataType,
+                        'DataOrderCode' => $orderCode,
+                        'title' => $Title,
+                        'total' => $Total,
+                        'PayType' => $PayType,
                         'IP' => $C['IP'],
                         'IP_port' => $C['port'],
                         'useragent' => $C['useragent'],
                         'createDate' => time(),
                         'Status' => 0,
                         'PayCode' => self::orderCode()
-                    ]);
-                    $insertDt['PayID'] = DB('pay_data')->insert($insertDt,true);
-                    $PayData = $insertDt;
-                }
-                if($PayData){
-                    $PayCreateStatus = 0;
+                    ];
+                    $PayData['PayID'] = DB('pay_data')->insert($PayData, true);
+
                     //支付平台回调地址
                     $callbackUrl = $C['siteurl'].'pay/confirm/callback_wechat/';
                     //微信 下单
                     if($PayType == 'wechat'){
+
                         if($user['WXopenid']){
-                            $payDt = Wechat::Pay_create($user['WXopenid'], $PayData['PayCode'], $Total, $Title,$callbackUrl);
+                            $payDt = Wechat::Pay_create_jsapi([
+                                'description' => $Title,
+                                'out_trade_no' => $PayData['PayCode'],
+                                'notify_url' => $callbackUrl,
+                                'amount' => [
+                                    'total' => $Total,
+                                    'currency' => 'CNY'
+                                ],
+                                'payer' => [
+                                    'openid' => $user['WXopenid'],
+                                ],
+                                'scene_info' => [
+                                    'payer_client_ip' => $C['IP'],
+                                ],
+                            ]);
+
                             //下单成功
-                            if($payDt && $payDt['success'] && $payDt['prepay_id'] && $payDt['sign']){
-                                $PayData['PayUrl'] = $payDt['PayUrl'];
-                                $PayData['payCreateData'] = $payDt;
-                                $PayCreateStatus = 1;
+                            if($payDt['success']){
+                                $PayData['payCreateData'] = $payDt['createData'];
                             }else{
                                 $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
                             }
                         }else{
-                            $returnData['msg'] = '非微信环境或没有该用户的微信OpenID';
+                            $returnData['msg'] = '用户微信OpenID缺失';
                         }
 
                         //支付宝 下单
@@ -193,26 +201,26 @@ class Pay{
                         $payDt = Alipay::Pay_create($PayData['PayCode'], $Total, $Title, $callbackUrl);
                         //下单成功
                         if($payDt && $payDt['success'] && $payDt['sign']){
-                            $PayData['PayUrl'] = $payDt['PayUrl'];
-                            $PayData['payCreateData'] = $payDt;
-                            $PayCreateStatus = 1;
+                            $PayData['payCreateData'] = $payDt['createData'];
                         }else{
                             $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
                         }
                     }
 
-                    if($PayCreateStatus){
-                        $returnData['success'] = 1;
-                        $returnData['msg'] = '下单成功';
-                        $returnData['PayData'] = $PayData;
-                        DB('pay_data')->where('PayID', $PayData['PayID'])->update([
-                            'payCreateData'=>json_encode($PayData['payCreateData']),
-                            'PayUrl'=>$PayData['PayUrl'],
-                            'Status' => 1 //支付订单状态变更为建单成功 待付款
-                        ]);
-                    }
                 }
 
+                if($PayData['payCreateData'] && $PayData['Status'] === 0){
+                    DB('pay_data')->where('PayID', $PayData['PayID'])->update([
+                        'payCreateData'=>json_encode($PayData['payCreateData']),
+                        'Status' => 1 //支付订单状态变更为建单成功 待付款
+                    ]);
+                }
+
+                if(!$returnData['msg']){
+                    $returnData['success'] = 1;
+                    $returnData['msg'] = '下单成功';
+                    $returnData['PayData'] = $PayData;
+                }
             }else{
                 $returnData['success'] = 0;
                 $returnData['msg'] = '下单用户不存在';

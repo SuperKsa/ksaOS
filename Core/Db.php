@@ -467,12 +467,15 @@ class DB{
     public function fetch_page($keyfield=''){
         $select = $this->selects;
         $order = $this->orders;
+        $limits = $this->limits;
         $this->selects = [];
         $this->orders = [];
+        $this->limits = [];
         $count = $this->fetch_count();
 
         $this->selects = $select;
         $this->orders = $order;
+        $this->limits = $limits;
         $data = $count > 0 ? $this->fetch_all($keyfield) : [];
         $maxPage = ceil($count / $this->limits['limit']);
         return ['page'=>$this->pages, 'maxpage'=>$maxPage, 'limit'=>$this->limits['limit'], 'count' => $count, 'list'=>$data];

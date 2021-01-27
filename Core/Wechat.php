@@ -14,8 +14,14 @@ if(!defined('KSAOS')) {
     exit('Error.');
 }
 
+
 class Wechat {
     const _name = '微信业务处理类';
+    private static  $WECHAT_API = 'https://api.mch.weixin.qq.com';
+    //jsapi支付接口地址
+    private static $WECHAT_API_JSAPI = '/v3/pay/transactions/jsapi';
+    //微信支付查询订单接口地址
+    private static $WECHAT_API_QUERY= '/v3/pay/transactions/id/';
 
     /**
      * 获取微信基础 access_token
@@ -181,20 +187,119 @@ class Wechat {
     }
 
     /**
+     * 微信支付 JSAPI下单函数
+     * @param array $option
+     * @return array
+     */
+    static function Pay_create_jsapi($option=[]){
+        global $C;
+        $option['amount']['total'] = floor($option['amount']['total'] * 100);
+        $post = [
+            'appid' => $C['setting']['WX_APPID'],
+            'mchid' => ''.$C['setting']['WX_PayID'].'',
+            'scene_info' => [
+                'payer_client_ip' => $C['IP'],
+            ],
+        ];
+        $post = array_merges($post, $option);
+        $post = json_encode($post);
+
+        $api = self::$WECHAT_API_JSAPI;
+        $sign = self::authorizationV3('POST', $api, $post);
+        $send = Curls::send(self::$WECHAT_API.$api, $post, [
+            'User-Agent' => $C['useragent'],
+            'Content-Type' => 'application/json',
+            'Authorization' => $sign['Authorization']
+        ]);
+        if($send && $send['data']){
+            $send['data'] = json_decode($send['data'], true);
+        }
+
+        $return = [
+            'success' => 0,
+            'errorcode' => '',
+            'msg'  => '',
+            'createData' => [ //建单数据
+                'option' => $option,
+                'sign' => [
+                    'time' => $sign['time'],
+                    'nonce_str' => $sign['nonce_str'],
+                    'sign' => $sign['sign'],
+                ],
+                'prepay_id' => ''
+            ]
+        ];
+        if($send['httpcode'] == 200 && $send['data']['prepay_id']){
+            $return['success'] = 1;
+            $return['createData']['prepay_id'] = $send['data']['prepay_id'];
+
+        }else if($send['httpcode'] > 0){
+            $return['errorcode'] = $send['data']['code'];
+            $return['msg'] = $send['data']['message'];
+        }
+        return $return;
+    }
+
+    /**
+     * 微信支付 V3授权生成
+     * @param string $method 请求方式 POST GET PUT
+     * @param string $api 请求API地址
+     * @param null $post 请求body数据
+     * @return array
+     */
+    static function authorizationV3($method='', $api ='', $post=NULL){
+        global $C;
+        $time = time();
+        $nonce_str = rands(10);
+        $sign = self::siginV3([
+            strtoupper($method),
+            $api,
+            $time,
+            $nonce_str,
+            $post,
+        ]);
+        return [
+            'sign' => $sign,
+            'Authorization' => 'WECHATPAY2-SHA256-RSA2048 '.sprintf('mchid="%s",nonce_str="%s",timestamp="%d",serial_no="%s",signature="%s"', $C['setting']['WX_PayID'], $nonce_str, $time, '372657B6135AFB32446D9B6A54128A5693BF91E8', $sign)
+        ];
+    }
+
+    /**
+     * 微信支付 V3签名生成
+     * @param array $signData
+     * @return string
+     */
+    static function siginV3($signData =[]){
+        global $C;
+        $message = '';
+        foreach($signData as $value){
+            $message .= $value."\n";
+        }
+
+        $signature = $C['setting']['WX_PayCERTIFICATE'];
+        $privateKey = $C['setting']['WX_PayPRIVATEKEY'];
+        openssl_sign($message, $signature, $privateKey, 'sha256WithRSAEncryption');
+        return base64_encode($signature);
+
+    }
+
+    /**
      * 微信API下单函数
+     * 即将废弃 2021年1月28日 00:54:04
+     *
      * 参考资料：https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
      * @param string $userOpenid 用户openID
      * @param string $PayCode 系统内部订单编号
      * @param string $str
      */
-    static function Pay_create($userOpenid, $PayCode='', $total=0, $strbody='', $callbackUrl=''){
+    static function _Pay_create($userOpenid, $PayCode='', $total=0, $strbody='', $callbackUrl=''){
         global $C;
         $APIURL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
         //回调地址
         $callbackUrl = ($callbackUrl);
         $nonce_str = rands(10);
         $total = floatval($total);
-        $total = $total > 0 ? $total * 100 : 0;
+        $total = $total > 0 ? floor($total * 100) : 0; //付款金额以分为单位的整数 向下舍掉分后面的值
 
 
         $returnData = [
@@ -205,7 +310,7 @@ class Wechat {
         ];
 
         if($PayCode && $total >0){
-            $strbody = mb_substr($strbody,0,25); //body不能超过25个字符
+            $strbody = mb_substr($strbody,0,120); //body不能超过120个字符
             $post = [
                 'body' => $strbody, //商品简单描述 100字内
                 'total_fee' => $total,//支付金额
@@ -216,6 +321,7 @@ class Wechat {
                 'notify_url' => $callbackUrl,
                 'trade_type' => self::isWechat() ? 'JSAPI' : 'MWEB', //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
             ];
+
             if($userOpenid){
                 $post['openid'] = $userOpenid;
             }
@@ -223,7 +329,7 @@ class Wechat {
 
             $returnData['sign'] = $post['sign'];
             $post = $post ? self::pay_Arr2Xml($post) : '';
-            $data = Curls::send($APIURL,$post);
+            $data = Curls::send($APIURL, $post);
 
             $data = $data['data'];
             if($data){
@@ -256,42 +362,38 @@ class Wechat {
         return $returnData;
     }
 
+
     /**
      * 订单状态查询接口
-     * 参考资料：https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_2
-     * @param string $ordercode 自己系统订单编号
+     * @param string $PayCode 支付订单号
+     * @param string $transaction_id 微信支付系统生成的订单号
+     * @return array|mixed
      */
-    function pay_query($PayCode=''){
+    function pay_query($PayCode='', $transaction_id =''){
         global $C;
-        $APIURL = 'https://api.mch.weixin.qq.com/pay/orderquery';
-        $nonce_str = rands(10);
-        $post = [
-            'sign_type' => 'MD5',
-            'nonce_str' => $nonce_str,
-            'out_trade_no' => $PayCode,
-        ];
 
-        $post = self::pay_sign($post);
-
-        $post = $post ? self::pay_Arr2Xml($post) : '';
-        $data = Curls::send($APIURL,$post);
-        $data = $data['data'];
+        $api = self::$WECHAT_API_QUERY.$transaction_id.'?mchid='.$C['setting']['WX_PayID'];
+        $sign = self::authorizationV3('GET', $api);
+        $send = Curls::send(self::$WECHAT_API.$api, '', [
+            'User-Agent' => $C['useragent'],
+            'Content-Type' => 'application/json',
+            'Authorization' => $sign['Authorization']
+        ]);
+        $data = json_decode($send['data'], true);
         $returnData = [
             'success' => 0,
             'msg' => '创建查询',
-            'sign' => $post['sign'],
+            'sign' => $sign,
             'total' => 0, //查询的支付金额
             'PayStatus' => 0, //订单付款状态 0=等待付款 1=付款成功
         ];
         if($data){
-            $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
-            $data = json_decode(json_encode($data),true);
-            if(strtolower($data['trade_state']) == 'success' && $data['mch_id'] == $C['setting']['WX_PayID'] && $data['out_trade_no'] == $PayCode){
+            if(strtolower($data['trade_state']) == 'success' && $data['mch_id'] == $C['setting']['WX_PayID'] && $data['appid'] == $C['setting']['WX_APPID'] && $data['out_trade_no'] == $PayCode){
                 $returnData = $data;
                 $returnData['success'] = 1;
                 $returnData['PayStatus'] = 1; //付款成功
                 $returnData['orderCode'] = $PayCode; //成功的同时必须返回传入的$PayCode
-                $returnData['total'] = floatval($data['total_fee']) * 100; //微信的金额为分 需要x100 =元
+                $returnData['total'] = floatval($data['total_fee']) /100; //微信的金额为分 需要转为元
             }
             $returnData['msg'] = $data['trade_state_desc'];
         }
@@ -388,5 +490,46 @@ class Wechat {
             }
         }
         return $wechat;
+    }
+
+    /**
+     * Decrypt AEAD_AES_256_GCM ciphertext
+     *
+     * @param string    $associatedData     AES GCM additional authentication data
+     * @param string    $nonceStr           AES GCM nonce
+     * @param string    $ciphertext         AES GCM cipher text
+     *
+     * @return string|bool      Decrypted string on success or FALSE on failure
+     */
+    static function decryptToString($associatedData, $nonceStr, $ciphertext) {
+        global $C;
+        $ciphertext = \base64_decode($ciphertext);
+        $AUTH_TAG_LENGTH_BYTE = 16;
+        if (strlen($ciphertext) <= $AUTH_TAG_LENGTH_BYTE) {
+            return false;
+        }
+        $aesKey = $C['setting']['WX_PayKEY'];
+        // ext-sodium (default installed on >= PHP 7.2)
+        if (function_exists('\sodium_crypto_aead_aes256gcm_is_available') &&
+            \sodium_crypto_aead_aes256gcm_is_available()) {
+            return \sodium_crypto_aead_aes256gcm_decrypt($ciphertext, $associatedData, $nonceStr, $aesKey);
+        }
+
+        // ext-libsodium (need install libsodium-php 1.x via pecl)
+        if (function_exists('\Sodium\crypto_aead_aes256gcm_is_available') &&
+            \Sodium\crypto_aead_aes256gcm_is_available()) {
+            return \Sodium\crypto_aead_aes256gcm_decrypt($ciphertext, $associatedData, $nonceStr, $aesKey);
+        }
+
+        // openssl (PHP >= 7.1 support AEAD)
+        if (PHP_VERSION_ID >= 70100 && in_array('aes-256-gcm', \openssl_get_cipher_methods())) {
+            $ctext = substr($ciphertext, 0, -$AUTH_TAG_LENGTH_BYTE);
+            $authTag = substr($ciphertext, -$AUTH_TAG_LENGTH_BYTE);
+
+            return \openssl_decrypt($ctext, 'aes-256-gcm', $aesKey, \OPENSSL_RAW_DATA, $nonceStr,
+                $authTag, $associatedData);
+        }
+
+        throw new \RuntimeException('AEAD_AES_256_GCM需要PHP 7.1以上或者安装libsodium-php');
     }
 }

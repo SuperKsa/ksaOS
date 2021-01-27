@@ -54,7 +54,7 @@ class Service{
 		}
 		
 		if(is_object($hook)){
-			$hook();
+            call_user_func($hook);
 		}elseif(is_array($hook)){
 			foreach($hook as $val){
 				self::_HookRun($val);
@@ -117,6 +117,7 @@ class Service{
 		if(!is_file($file)){
 			throw new \Exception('配置文件config.php丢失');
 		}
+        $config = [];
 		@include_once ROOT.'config.php';
 		$this->config = (array)$config;
 		
