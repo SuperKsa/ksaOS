@@ -487,7 +487,7 @@ function JSON($dt,$g=[]){
 	global $C;
 	$user = [];
 	foreach($C['user'] as $key => $value){
-		if(in_array($key, ['uid','name','avatar'])){
+		if(in_array($key, ['uid','name','avatar','sex'])){
 			$user[$key] = $value;
 		}
 	}

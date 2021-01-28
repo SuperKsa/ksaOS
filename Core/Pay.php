@@ -98,7 +98,9 @@ class Pay{
 
     /**
      * 创建支付订单
-     * 注意：强制为当前用户登录用户创建支付订单！
+     * 注意：
+     *      强制为当前用户登录用户创建支付订单！
+     *      根据传入的数据自动过期、自动创建
      * 如果未登录 则而失败
      * @param string $orderCode 订单ID (必须)
      * @param string $PayType 支付类型(必须) wechat || alipay
@@ -126,13 +128,13 @@ class Pay{
             'PayData' => [] //返回的订单数据
         ];
 
+        //订单失效时间 秒
+        $orderOutTime = 3600;
+
         if($uid > 0 && $PayType && $dataID && $Total >0 && $Title){
 
             $user = DB('user')->uid($uid);
             if($user){
-
-                //订单失效时间
-                $orderOutTime = 180;
 
                 //检查是否有重复的待支付订单 数据类型 与数据订单号相同
                 $PayData = DB('pay_data')->where(['uid'=>$uid, 'DataID'=>$dataID,'DataType'=>$dataType,'DataOrderCode'=>$orderCode, 'Status'=>[0,1]])->fetch_first();
