@@ -131,8 +131,8 @@ class Wechat {
     static function UserInfoMini($code='', $option=[]){
         global $C;
 
-        $APPID = $C['setting']['WX_APPID'];
-        $AppSecret = $C['setting']['WX_AppSecret'];
+        $APPID = $C['setting']['WX_PAYAPPID'];
+        $AppSecret = $C['setting']['WX_PAYAppSecret'];
         if($option){
             if($option['AppID']){
                 $APPID = $option['AppID'];
