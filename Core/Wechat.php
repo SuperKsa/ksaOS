@@ -195,7 +195,7 @@ class Wechat {
         global $C;
         $option['amount']['total'] = floor($option['amount']['total']);
         $post = [
-            'appid' => $C['setting']['WX_APPID'],
+            'appid' => $C['setting']['WX_PAYAPPID'],
             'mchid' => ''.$C['setting']['WX_PayID'].'',
             'scene_info' => [
                 'payer_client_ip' => $C['IP'],
