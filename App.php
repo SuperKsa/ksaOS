@@ -58,16 +58,35 @@ class APP extends Service{
 
     /**
      * 全局提示类
+     * 此处中断程序继续执行
      * @param string $msg 提示信息
-     * @param string $url 需要跳转的URL （为空时代表错误等级提示）
-     * @param array $data 补充需要输出的数组
+     * @param int $success 提示类型 0=失败 1=成功
+     * @param array $data 返回给前台的数据
+     * @param bool $confirm 该消息是否需经过前台确认
+     * @param string $url 是否需要跳转到指定URL
      */
-    public static function Msg($msg='',$url='',$data=[]){
+    public static function Msg($msg='', $success=0, $data=[], $confirm=false, $url=''){
         global $C;
-
-        $success = $url ? 1 : ($data['success'] ? $data['success'] : 0);
+        $data = is_array($data) ? $data : [];
+        $success = $success ? $success : ($data['success'] ? $data['success'] : 0);
         if($C['ajax']){
-            JSON($data,['msg'=>$msg,'success'=>$success,'locationUrl'=>$url]);
+            $user = [];
+            foreach($C['user'] as $key => $value){
+                if(in_array($key, ['uid','name','avatar','sex'])){
+                    $user[$key] = $value;
+                }
+            }
+            $dt = [
+                'uid' => $C['uid'],
+                'token' => $C['token'],
+                'user' => $user,
+                'msg' => $msg,
+                'success' => $success,
+                'confirm' => $confirm,
+                'locationUrl' => $url,
+                'result' => $data
+            ];
+            echo json_encode($dt,JSON_UNESCAPED_UNICODE);
         }else{
             include template::show('common/msg');
         }

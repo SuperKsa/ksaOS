@@ -193,7 +193,7 @@ class Wechat {
      */
     static function Pay_create_jsapi($option=[]){
         global $C;
-        $option['amount']['total'] = floor($option['amount']['total'] * 100);
+        $option['amount']['total'] = floor($option['amount']['total']);
         $post = [
             'appid' => $C['setting']['WX_APPID'],
             'mchid' => ''.$C['setting']['WX_PayID'].'',

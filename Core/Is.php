@@ -23,7 +23,7 @@ class IS{
      *
      * @return bool 成功返回true
      */
-	public static function POST(string $formID=''){
+	public static function POST($formID=''){
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			if($formID){
 				if($_POST['FORMID'] == $formID){
@@ -80,7 +80,7 @@ class IS{
 	 * @param string $email 邮箱地址
 	 * @return boolean 成功返回true
 	 */
-	public static function email(string $email='') {
+	public static function email($email='') {
 		return filter_var($email, FILTER_VALIDATE_EMAIL) ? true : false;
 	}
 	
@@ -90,7 +90,7 @@ class IS{
 	 * @param string $isIPv6 1=IPV6 默认IPV4
 	 * @return boolean
 	 */
-	public static function IP(string $ip='', $isIPv6=false) {
+	public static function IP($ip='', $isIPv6=false) {
 		return $isIPv6 ? filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) : filter_var($ip, FILTER_VALIDATE_IP);
 	}
 
@@ -179,7 +179,7 @@ class IS{
      */
 	public static function F($condition, $msg=''){
 		if($condition){
-			APP::Msg($msg);
+			APP::Msg($msg, 0);
 		}
 	}
 }

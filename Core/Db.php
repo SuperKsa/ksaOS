@@ -614,7 +614,38 @@ class DB{
 		$this->__cache('del');//删缓存
 		return $ret;
 	}
-	
+
+    /**
+     * 数据累计更新
+     * @param array/field $data 需更新的字段数组([key => 1, key=>-1]) 或 字段名key
+     * @return bool
+     */
+	public function updateHeap($data=[]){
+        if(!$this->table || empty($data) || empty($this->__where)){
+            return false;
+        }
+        $sql = $this->sql('update');
+        if(is_array($data)){
+            foreach($data as $key => $val){
+                $val = intval($val);
+                if($val !== 0){
+                    $data[$key] = '`'.$key.'`=`'.$key.'` '.($val>0 ? '+' : '').$val;
+                }
+            }
+        }else if(is_string($data)){
+            $data = ['`'.$data.'`=`'.$data.'` +1'];
+        }
+
+        if(!$data){
+            return false;
+        }
+        $set = implode(' , ',$data);
+        $sql = str_replace('{%idef%}',$set,$sql);
+        $this->tableLink();
+        $res = self::$DB->update($sql);
+        $this->__cache('del');//删缓存
+        return $res;
+    }
 	
 	/**
 	 * DB操作 - 更新数据 update

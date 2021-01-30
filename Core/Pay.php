@@ -106,7 +106,7 @@ class Pay{
      * @param string $PayType 支付类型(必须) wechat || alipay
      * @param string $dataType 商品数据类型 (必须) goods=热卖 vip=会员 expert=专家
      * @param int $dataID 商品数据ID (必须) int
-     * @param string $Total 支付金额 (必须)
+     * @param string $Total 支付金额 (必须) 单位分
      * @param string $Title 商品名称 (必须) 100字
      * @param string $Summary 支付摘要 用户支付时显示 可选 100字
      * @return array $returnData
