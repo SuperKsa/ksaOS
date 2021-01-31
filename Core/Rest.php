@@ -25,6 +25,16 @@ class Rest{
     static function url(){
         return $_SERVER['REQUEST_URI'];
     }
+
+    /**
+     * 获取当前用户浏览器标示信息
+     * @return mixed
+     */
+    static function useragent(){
+        return $_SERVER['HTTP_USER_AGENT'];
+    }
+
+
     /**
      * 获取当前分页请求
      * @param int $limit 每页数量

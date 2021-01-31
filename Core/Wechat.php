@@ -22,6 +22,8 @@ class Wechat {
     private static $WECHAT_API_JSAPI = '/v3/pay/transactions/jsapi';
     //微信支付查询订单接口地址
     private static $WECHAT_API_QUERY= '/v3/pay/transactions/id/';
+    //微信支付退款订单接口地址
+    private static $WECHAT_API_REFUNDS= '/v3/refund/domestic/refunds';
 
     /**
      * 获取微信基础 access_token
@@ -239,6 +241,82 @@ class Wechat {
         }
         return $return;
     }
+
+
+    /**
+     * 微信支付V3接口通信函数
+     * 自动生成授权
+     * @param string $api API相对地址
+     * @param array $post post数据
+     * @return array
+     */
+    static function PAY_V3_SEND($api='', $post=[]){
+        $post = $post ? json_encode($post) : '';
+        $sign = self::authorizationV3($post ? 'POST' : 'GET', $api, $post);
+        $send = Curls::send(self::$WECHAT_API.$api, $post, [
+            'User-Agent' => Rest::useragent(),
+            'Content-Type' => 'application/json',
+            'Authorization' => $sign['Authorization']
+        ]);
+        if($send && $send['data']){
+            $send['data'] = json_decode($send['data'], true);
+        }
+        return $send;
+    }
+
+    /**
+     * 微信支付 退款函数
+     * 直接面对平台接口 没有任何逻辑
+     * @param array  $option 按照微信接口传递
+     */
+    static function Pay_refunds_jsapi($option){
+
+        $send = self::PAY_V3_SEND(self::$WECHAT_API_REFUNDS, $option);
+
+        $return = [
+            'success' => 0,
+            'errorcode' => '',
+            'msg'  => '',
+            'data' => [ //建单数据
+                'option' => $option,
+                'callback' => []
+            ]
+        ];
+        if($send['httpcode'] == 200 && $send['data']['refund_id']){
+            $return['success'] = 1;
+            $return['data']['callback'] = $send['data'];
+
+        }else if($send['httpcode'] > 0){
+            $return['errorcode'] = $send['data']['code'];
+            $return['msg'] = $send['data']['message'];
+        }
+        return $return;
+    }
+
+    static function Pay_query_jsapi($option){
+
+        $send = self::PAY_V3_SEND(self::$WECHAT_API_QUERY.$option['transaction_id'].'?mchid='.$option['mchid']);
+
+        $return = [
+            'success' => 0,
+            'errorcode' => '',
+            'msg'  => '',
+            'data' => [ //建单数据
+                'option' => $option,
+                'callback' => []
+            ]
+        ];
+        if($send['httpcode'] == 200 && $send['data']['appid']){
+            $return['success'] = 1;
+            $return['data']['callback'] = $send['data'];
+
+        }else if($send['httpcode'] > 0){
+            $return['errorcode'] = $send['data']['code'];
+            $return['msg'] = $send['data']['message'];
+        }
+        return $return;
+    }
+
 
     /**
      * 微信支付 V3授权生成
