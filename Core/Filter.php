@@ -35,9 +35,11 @@ class Filter{
      * @return string
      */
     static function int($str='') {
-        preg_match('/-?[0-9]+/', $str, $tmp);
-        if($tmp){
-            return $tmp[0];
+        if(!is_array($str)){
+            preg_match('/-?[0-9]+/', $str, $tmp);
+            if($tmp){
+                return $tmp[0];
+            }
         }
     }
     /**

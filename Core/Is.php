@@ -174,12 +174,13 @@ class IS{
 
     /**
      * 条件判断并输出一条错误提示
-     * @param  bool $condition
-     * @param  string  $msg
+     * @param bool $condition 判断条件=true
+     * @param string $msg 提示内容
+     * @param bool $isConfirm 是否需要前台确认
      */
-	public static function F($condition, $msg=''){
+	public static function F($condition=true, $msg='', $isConfirm=false){
 		if($condition){
-			APP::Msg($msg, 0);
+			APP::Msg($msg, 0, [], $isConfirm);
 		}
 	}
 }

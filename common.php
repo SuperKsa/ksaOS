@@ -701,11 +701,20 @@ function array_valueMin($arr=[], $field=''){
 }
 
 /**
- * 预处理列表数据中的各种字段
- * 填充，格式化等等
- * @param array $arr
- * @param array $cfg
+ * 回调处理数组中的各种字段
+ * 场景：
+ * 一个数组里有很多字段需要全部做相同计算
+array_callbacks($value, ['total', 'total_cost', 'total_sale', 'total_sale_vip', 'shipping_fee', 'start_fee'], function($v){
+return $v ? $v / 100 : 0;
+});
+ * @param array $arr 需要处理的数据
+ * @param array $fields 需要处理的对应字段数组[field1, field2, field3, ...]
+ * @param string $callfun 回调函数
  */
-function array_loops($arr=[],$cfg=[]){
-
+function array_callbacks(&$arr=[], $fields=[], $callfun=''){
+    foreach($fields as $value){
+        if(isset($arr[$value])){
+            $arr[$value] = call_user_func($callfun, $arr[$value]);
+        }
+    }
 }
