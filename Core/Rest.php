@@ -279,6 +279,8 @@ class Rest{
      *      'test1' => 'int:10',
      *      'test2' => ['>=', 'int:10']
      * ]);
+     * key支持别名（用尖括号隔开 右侧是where需要的字段）：
+     * ' key > newkey'
      * @return array
      */
     function where($rule = array()){
@@ -286,6 +288,7 @@ class Rest{
         $param = func_get_args();
         $where = [];
         foreach($rule as $field => $value){
+            //键名前带@符号表示直接参与where，无需前台数据
             if(substr($field, 0, 1) == '@'){
                 $where[] = [substr($field, 1), $value];
             }else{
@@ -297,15 +300,23 @@ class Rest{
                     $filter = $value;
                 }
                 $filter = $filter ? $filter : 'text';
+                $whereField = $field;
+                //key支持别名（用尖括号隔开 右侧是where需要的字段）
+                if(strpos($field, '>') >0){
+                    list($field, $whereField) = explode('>', $field);
+                    $field = trim($field);
+                    $whereField = trim($whereField);
+                }
+
                 if(isset($dt[$field])){
                     $v = $dt[$field];
-                    if(is_callable($filter)){
+                    if(gettype($filter) =='object'){
                         $v = call_user_func($filter, $v, $dt);
                     }else{
                         $v = self::filter($v, $filter);
                     }
-                    if($v !== ''){
-                        $where[] = $factor ? [$field, $factor, $v] : [$field, $v];
+                    if($v !== '' && $v !== NULL){
+                        $where[] = $factor ? [$whereField, $factor, $v] : [$whereField, $v];
                     }
                 }
             }
