@@ -289,14 +289,21 @@ class Rest{
             if(substr($field, 0, 1) == '@'){
                 $where[] = [substr($field, 1), $value];
             }else{
-                $filter = 'text';
                 $factor = '';
                 if(is_array($value)){
                     $factor = $value[0];
                     $filter = $value[1];
+                }else{
+                    $filter = $value;
                 }
+                $filter = $filter ? $filter : 'text';
                 if(isset($dt[$field])){
-                    $v = self::filter($dt[$field], $filter);
+                    $v = $dt[$field];
+                    if(is_callable($filter)){
+                        $v = call_user_func($filter, $v, $dt);
+                    }else{
+                        $v = self::filter($v, $filter);
+                    }
                     if($v !== ''){
                         $where[] = $factor ? [$field, $factor, $v] : [$field, $v];
                     }
