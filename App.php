@@ -65,7 +65,7 @@ class APP extends Service{
      * @param bool $confirm 该消息是否需经过前台确认
      * @param string $url 是否需要跳转到指定URL
      */
-    public static function Msg($msg='', $success=0, $data=[], $confirm=false, $url=''){
+    public static function Msg($msg='', $success=0, $data=[], $confirm=false, $url='', $isLogin=false){
         global $C;
         $data = is_array($data) ? $data : [];
         $success = $success ? $success : ($data['success'] ? $data['success'] : 0);
@@ -79,6 +79,7 @@ class APP extends Service{
             $dt = [
                 'uid' => $C['uid'],
                 'token' => $C['token'],
+                'isLogin' => $isLogin,
                 'user' => $user,
                 'msg' => $msg,
                 'success' => $success,
