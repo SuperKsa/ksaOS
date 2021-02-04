@@ -181,7 +181,7 @@ class Dates{
 			if(strpos($time,'.') !== false){
 				list($time,$ms) = explode('.',$time);
 			}
-			$time = strtotime($time.' UTC').$ms;
+			$time = strtotime($time).$ms;
 		}
 		if($time >0){
 			$strlen = strlen($time);

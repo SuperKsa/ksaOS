@@ -559,8 +559,9 @@ function IP() {
 	}
 	$C['IP'] = $ip;
 	$C['PROT'] = $_SERVER['REMOTE_PORT'];
-	define('IP',$C['IP']);
-	define('IPPROT',$C['PROT']);
+	define('IP', $C['IP']);
+	define('IPPORT', $C['PROT']);
+    define('USERAGENT', $_SERVER['HTTP_USER_AGENT']);
 	return $ip;
 }
 
@@ -717,4 +718,18 @@ function array_callbacks(&$arr=[], $fields=[], $callfun=''){
             $arr[$value] = call_user_func($callfun, $arr[$value]);
         }
     }
+}
+
+/**
+ * 数字转万字符
+ * @param int $number 需要转换的数字
+ * @param string $unit 自定义单位 默认W 可以传入 万
+ * @param int $precision 舍入保留小数位 默认2
+ */
+function number_wan($number=0, $unit='W', $precision=2){
+    if($number >= 10000){
+        $number = bcdiv($number , 10000, $precision);
+        $number .= $unit;
+    }
+    return $number;
 }
