@@ -78,6 +78,7 @@ class User{
 		}
 		return true;
 	}
+
 	
 	/**
 	 * 用户登录(登录成功，写cookie：token并返回token串)
@@ -101,7 +102,7 @@ class User{
 
 			if($PWstatus){
 				$token = self::getToken($user);
-				$s = cookies('token',$token,86400 * 15);
+				cookies('token',$token,86400 * 15);
 				unset($user['salt'],$user['password']);
 				$user['token'] = $token;
 				$C['user'] = $user;
