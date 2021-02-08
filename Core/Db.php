@@ -271,6 +271,15 @@ class DB{
 
 		return $this;
 	}
+
+    /**
+     * 随机排序
+     * 没有任何参数
+     */
+	public function rand(){
+	    $this->orders = [['RAND()', '']];
+	    return $this;
+    }
 	
 	/**
 	 * 构造器 group
