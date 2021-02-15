@@ -25,15 +25,12 @@ class Curls{
 	 * @param string $resolve 域名指定IP、端口的设置 每个元素以冒号分隔。格式： array("example.com:80:127.0.0.1")
 	 * @return type
 	 */
-	public static function send($url='', $post=[], $header=[], $timeout=15, $resolve=[]){
+	public static function send($url='', $post=[], $header=[], $timeout=15, $resolve=[], $referer=''){
 		global $C;
 		APP::hook(__CLASS__ , __FUNCTION__);
 		$startTime = microtime(true);
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
-		//$header['HTTP_USER_AGENT'] = 'Mozilla/4.0 (compatible; CROS PHP bot; ' . php_uname('a') . '; PHP/' . phpversion() . ') / TIME:'.TIME;
-		//$header['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
-		//$header['REMOTE_PORT'] = $_SERVER['REMOTE_PORT'];
 		if($header){
 			foreach($header as $key => $value){
 				$header[$key] = $key.': '.$value;
@@ -50,11 +47,14 @@ class Curls{
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($ch, CURLOPT_HEADER, 1);
+		curl_setopt($ch, CURLOPT_HEADER, true);
 		if($post) {
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $post === true ? '' : $post);
 		}
+		if($referer){
+            curl_setopt($ch, CURLOPT_REFERER, $referer);
+        }
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1); //握手时间固定1秒 没响应直接断开
 		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout); //文件下载时间 超过直接断开
 		$data = curl_exec($ch);
