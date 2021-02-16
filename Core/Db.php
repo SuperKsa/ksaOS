@@ -837,8 +837,6 @@ class DB{
 				return $field.' IS NOT NULL';
 			case (in_array($glue, ['like','keyword','notlike'])): //likes值支持数组多个值 and方式连接
 				$s = $glue =='notlike' ? ' NOT LIKE ' : ' LIKE ';
-				$val = str_replace(['(',')',';','$','`'],'',$val);
-				$r = '';
 				$u = $tp =='or' ? ' OR ' : ' AND ';
 				if(is_array($val)){
 					foreach($val as $k => $v){
