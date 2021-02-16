@@ -487,6 +487,7 @@ class DB{
         $this->limits = $limits;
         $data = $count > 0 ? $this->fetch_all($keyfield) : [];
         $maxPage = ceil($count / $this->limits['limit']);
+        $this->pages = $this->pages > $maxPage ? $maxPage : $this->pages;
         return ['page'=>$this->pages, 'maxpage'=>$maxPage, 'limit'=>$this->limits['limit'], 'count' => $count, 'list'=>$data];
     }
 
