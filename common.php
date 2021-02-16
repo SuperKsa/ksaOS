@@ -715,7 +715,7 @@ return $v ? $v / 100 : 0;
 function array_callbacks(&$arr=[], $fields=[], $callfun=''){
     foreach($fields as $value){
         if(isset($arr[$value])){
-            $arr[$value] = call_user_func($callfun, $arr[$value]);
+            $arr[$value] = call_user_func($callfun, $arr[$value], $value);
         }
     }
 }
