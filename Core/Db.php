@@ -487,6 +487,7 @@ class DB{
         $this->limits = $limits;
         $data = $count > 0 ? $this->fetch_all($keyfield) : [];
         $maxPage = ceil($count / $this->limits['limit']);
+        $this->pages = $this->pages > $maxPage ? $maxPage : $this->pages;
         return ['page'=>$this->pages, 'maxpage'=>$maxPage, 'limit'=>$this->limits['limit'], 'count' => $count, 'list'=>$data];
     }
 
@@ -837,8 +838,6 @@ class DB{
 				return $field.' IS NOT NULL';
 			case (in_array($glue, ['like','keyword','notlike'])): //likes值支持数组多个值 and方式连接
 				$s = $glue =='notlike' ? ' NOT LIKE ' : ' LIKE ';
-				$val = str_replace(['(',')',';','$','`'],'',$val);
-				$r = '';
 				$u = $tp =='or' ? ' OR ' : ' AND ';
 				if(is_array($val)){
 					foreach($val as $k => $v){

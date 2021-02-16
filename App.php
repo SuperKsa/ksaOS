@@ -56,6 +56,13 @@ class APP extends Service{
 		self::$DB->close();
 	}
 
+	public static function Success($msg='', $data=[], $confirm=false, $url=''){
+	    if(!$data){
+            $data = ['success'=>1];
+        }
+	    self::Msg($msg, 1, $data, $confirm, $url);
+    }
+
     /**
      * 全局提示类
      * 此处中断程序继续执行
