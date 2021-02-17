@@ -18,31 +18,35 @@ if(!defined('KSAOS')) {
 class Wechat {
     const _name = '微信业务处理类';
     private static  $WECHAT_API = 'https://api.mch.weixin.qq.com';
+    //AccessToken 接口地址
+    private static $ACCESS_TOKEN_API = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}';
     //jsapi支付接口地址
     private static $WECHAT_API_JSAPI = '/v3/pay/transactions/jsapi';
     //微信支付查询订单接口地址
     private static $WECHAT_API_QUERY= '/v3/pay/transactions/id/';
     //微信支付退款订单接口地址
     private static $WECHAT_API_REFUNDS= '/v3/refund/domestic/refunds';
+    //小程序统一服务消息发送接口
+    private static $WEAPP_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send';
 
     /**
      * 获取微信基础 access_token
      * 缓存有效期 7200秒
      */
-    static function AccessToken($option=[]){
+
+    /**
+     * @param string $APPID
+     * @param string $AppSecret
+     * @return mixed|void
+     */
+    static function AccessToken($APPID='', $AppSecret=''){
         global $C;
 
-        $APPID = $C['setting']['WX_APPID'];
-        $AppSecret = $C['setting']['WX_AppSecret'];
-        if($option){
-            if($option['AppID']){
-                $APPID = $option['AppID'];
-            }
-            if($option['AppSecret']){
-                $AppSecret = $option['AppSecret'];
-            }
-        }
-        $accessToken = Cache('WX_ACCESSTOKEN');
+        $APPID = $APPID ? $APPID : $C['setting']['WX_APPID'];
+        $AppSecret = $AppSecret ? $AppSecret : $C['setting']['WX_AppSecret'];
+
+        $cacheKey = 'WX_AccessToken_'.md5($APPID.$AppSecret);
+        $accessToken = Cache($cacheKey);
         $accessToken = $accessToken ? json_decode($accessToken,true) : [];
 
         $outTime = intval($accessToken['expires_in']); //token有效期
@@ -55,11 +59,12 @@ class Wechat {
         }
         //如果token未过期
         if($access_token_time + $outTime < time() || !$access_token){
-            $curl = Curls::send('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid='.$APPID.'&secret='.$AppSecret);
+            $url = str_replace(['{appid}','{secret}'], [$APPID, $AppSecret], self::$ACCESS_TOKEN_API);
+            $curl = Curls::send($url);
             $data = $curl['data'] ? json_decode($curl['data'], true) : [];
             if($data['access_token']){
                 $data['dateline'] = time();
-                Cache('WX_ACCESSTOKEN',$data);
+                Cache($cacheKey,$data);
                 $access_token = $data['access_token'];
             }
         }
@@ -159,7 +164,7 @@ class Wechat {
      */
     static function UserInfo($code='', $option=[]){
         global $C;
-        $access_token = self::AccessToken($option);
+
 
         $APPID = $C['setting']['WX_APPID'];
         $AppSecret = $C['setting']['WX_AppSecret'];
@@ -171,6 +176,7 @@ class Wechat {
                 $AppSecret = $option['AppSecret'];
             }
         }
+        $access_token = self::AccessToken($APPID, $AppSecret);
         $sendAPI = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid='.$APPID.'&secret='.$AppSecret.'&code='.$code.'&grant_type=authorization_code';
 
         //拿用户access_token
@@ -558,7 +564,7 @@ class Wechat {
         }
     }
 
-    /*判断是否是手机*/
+    /*判断是否是微信浏览器*/
     static function isWechat() {
         $wechat = false;
         $useragent = strtolower($_SERVER['HTTP_USER_AGENT']);
@@ -568,6 +574,31 @@ class Wechat {
             }
         }
         return $wechat;
+    }
+
+
+    /**
+     * 小程序统一服务消息发送接口
+     * @param string $APPID APPID
+     * @param string $AppSecret 接口密钥
+     * @param string $openid 接收消息的用户openid 可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid
+     * @param array $weapp_template_msg 小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息
+     * @param array $mp_template_msg 公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息
+     */
+    static function WEAPP_MessageSend($APPID='', $AppSecret='', $openid='', $weapp_template_msg=[], $mp_template_msg=[]){
+        $token = self::AccessToken($APPID, $AppSecret);
+        $sendData = [
+            'access_token' => $token,
+            'touser' => $openid,
+            'weapp_template_msg' => $weapp_template_msg,
+            'mp_template_msg' => $mp_template_msg
+        ];
+        $send = Curls::send(self::$WEAPP_MessageSend_API, jsonEn($sendData));
+        $send['data'] = $send['data'] ? json_decode($send['data']) : [];
+        if($send['data']['errcode'] == 0 && $send['data']['errmsg'] =='ok'){
+            return true;
+        }
+        return false;
     }
 
     /**
