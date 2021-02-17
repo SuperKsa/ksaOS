@@ -16,7 +16,9 @@ if(!defined('KSAOS')) {
 
 
 class Wechat {
+
     const _name = '微信业务处理类';
+
     private static  $WECHAT_API = 'https://api.mch.weixin.qq.com';
     //AccessToken 接口地址
     private static $ACCESS_TOKEN_API = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}';
@@ -28,6 +30,9 @@ class Wechat {
     private static $WECHAT_API_REFUNDS= '/v3/refund/domestic/refunds';
     //小程序统一服务消息发送接口
     private static $WEAPP_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send';
+
+    //服务号统一服务消息发送接口
+    private static $SERVICE_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/template/send';
 
     /**
      * 获取微信基础 access_token
@@ -585,16 +590,30 @@ class Wechat {
      * @param array $weapp_template_msg 小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息
      * @param array $mp_template_msg 公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息
      */
-    static function WEAPP_MessageSend($APPID='', $AppSecret='', $openid='', $weapp_template_msg=[], $mp_template_msg=[]){
+    static function WEAPP_MessageSend($APPID='', $AppSecret='', $sendData=[]){
+        global $C;
         $token = self::AccessToken($APPID, $AppSecret);
+        $touser = $sendData['touser'];
+        $oldData = $sendData;
+        $oldData['appid'] = $C['setting']['WX_APPID'];
+        unset($oldData['touser']);
         $sendData = [
             'access_token' => $token,
-            'touser' => $openid,
-            'weapp_template_msg' => $weapp_template_msg,
-            'mp_template_msg' => $mp_template_msg
+            'touser' => $touser,
+            'mp_template_msg' => $oldData
         ];
-        $send = Curls::send(self::$WEAPP_MessageSend_API, jsonEn($sendData));
-        $send['data'] = $send['data'] ? json_decode($send['data']) : [];
+        $send = Curls::send(self::$WEAPP_MessageSend_API.'?access_token='.$token, jsonEn($sendData));
+        $send['data'] = $send['data'] ? json_decode($send['data'], 1) : [];
+        if($send['data']['errcode'] == 0 && $send['data']['errmsg'] =='ok'){
+            return true;
+        }
+        return false;
+    }
+
+    static function Service_MessageSend($APPID='', $AppSecret='', $sendData=[]){
+        $token = self::AccessToken($APPID, $AppSecret);
+        $send = Curls::send(self::$SERVICE_MessageSend_API.'?access_token='.$token, jsonEn($sendData));
+        $send['data'] = $send['data'] ? json_decode($send['data'], 1) : [];
         if($send['data']['errcode'] == 0 && $send['data']['errmsg'] =='ok'){
             return true;
         }
