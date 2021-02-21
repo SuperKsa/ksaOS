@@ -42,7 +42,7 @@ class Rest{
      */
     static function page($limit=20){
         $page = max(1, self::data('page','int'));
-        $limit = intval($limit);
+        $limit = max(0, intval($limit));
         $start = ($page - 1) * $limit;
         return [$page, $start, $limit];
     }
