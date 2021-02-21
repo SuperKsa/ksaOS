@@ -238,7 +238,7 @@ class Attach{
 		global $C;
 		$md = self::idtype($md);
 		if($md && $file){
-		    if(strpos($file,'http:') ===0 || strpos($file,'https:') ===0){
+		    if(cstrpos($file,['http://', 'https://','data/attach/'])){
 		        return $file;
             }
 			return $C['picurl'].self::Path($md, $file);
