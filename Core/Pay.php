@@ -54,7 +54,7 @@ class Pay{
      */
     function query($PayID){
         $PayID = intval($PayID);
-        $Data = Pay_getID($PayID);
+        $Data = self::Pay_getID($PayID);
         $queryDt = [];
         $PayTypeName = [
             'wechat' => '微信',
