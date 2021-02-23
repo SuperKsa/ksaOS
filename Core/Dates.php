@@ -119,7 +119,9 @@ class Dates{
 	 */
 	public static function TimesF($time=0, $format= 'Y-m-d H:i:s'){     
 		$time = self::timestamp($time);
+
 		$of = time() - $time;
+		$yearSame = date('Y', self::Year($time)) == date('Y');
 		if ($of <60){
 			$str = '刚刚';
 		}elseif($of < 60 * 60){
@@ -135,10 +137,10 @@ class Dates{
 				$str = '前天';
 			}
 			$str .= ' '.self::times($time=0,'H:i');
-		}elseif($of < 86400 * 365){
-			$str = self::times($time=0,'m-d H:i');
+		}elseif($yearSame && $of < 86400 * 365){
+			$str = self::times($time,'m-d H:i');
 		}else{
-			$str = self::times($time=0, $format);
+			$str = self::times($time, $format);
 		}
 		return $str;
 	}
