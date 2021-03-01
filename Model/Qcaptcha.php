@@ -48,8 +48,8 @@ if(!defined('KSAOS')) {
 }
 
 class Qcaptcha{
-	const AID = '2070432416'; //AppID
-	const AppSecretKey = '0v9VzMCEbo9STyyg08YChFQ'; //App Secret Key
+	const AID = CONFIG_QQCAPTCHA['APPID']; //AppID
+	const AppSecretKey = CONFIG_QQCAPTCHA['AppSecretKey']; //App Secret Key
 	const srciptUrl = 'https://ssl.captcha.qq.com/TCaptcha.js'; //客户端接入网址
 	const CheckUrl = 'https://ssl.captcha.qq.com/ticket/verify'; //服务器接入地址
 	
