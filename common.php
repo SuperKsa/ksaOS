@@ -198,8 +198,8 @@ function times($timestamp=0,$format= 'Y-m-d H:i:s'){
 /**
  * 分页别名
  */
-function page($num=0, $perpage=0, $curpage=0, $mpurl='', $maxpages=0, $page=0){
-	return APP::page($count, $url, $perpage, $max, $isjump);
+function page($num=0, $mpurl='', $perpage=0, $maxpages=0, $isjump=0){
+	return APP::page($num, $mpurl, $perpage, $maxpages, $isjump);
 }
 
 

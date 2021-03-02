@@ -31,7 +31,7 @@ class Alipay{
         $returnData = [
             'success' => 0,
             'msg' => '创建查询',
-            'sign' => $post['sign'],
+            'sign' => '',
             'total' => 0, //查询的支付金额
             'PayStatus' => 0, //订单付款状态 0=等待付款 1=付款成功
         ];
@@ -176,15 +176,16 @@ class Alipay{
     /**
      * 支付宝异步订单状态请求处理
      */
-    function ReturnStatus(){
+    function ReturnStatus($data=[], $orderData=[]){
+        global $C;
         if($_POST){
-            file_put_contents(ROOT.'./data/alipay.txt', cjson_encode($data));
+            file_put_contents(ROOT.'./data/alipay.txt', jsonEn($data));
             //只要有订单ID就直接查询订单状态 无需校验是否是支付宝发出的请求
             if($_POST && $_POST['out_trade_no']){
                 $orderCode = preg_replace('/[^0-9]/','',$_POST['out_trade_no']);
                 //支付宝主动POST数据检查 开发者ID 商户ID 必须对应 并且有返回支付订单号
                 if($_POST['auth_app_id'] == $C['setting']['alipay_APPID'] && $orderCode){
-                    DB('user_payorders')->update(['PayCallback'=> cjson_encode($_POST)],['PayID'=>$orderData['PayID']]);
+                    DB('user_payorders')->update(['PayCallback'=> jsonEn($_POST)],['PayID'=>$orderData['PayID']]);
                     $orderData = DB('user_payorders')->orderCode($orderCode);
                     if($orderData && $orderData['Status'] ==0 && $orderData['PayID']){
                         loadFunction('pay');
