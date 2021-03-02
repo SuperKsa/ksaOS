@@ -57,7 +57,7 @@ class Cache{
 			include ROOT.$File;
 		}
 		APP::hook(__CLASS__ , __FUNCTION__);
-		$___CacheListData = $___CacheListData ? $___CacheListData : [];
+		$___CacheListData = [];
 		
 		$isUpdateList = 0;
 		//增加一个缓存文件索引

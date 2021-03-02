@@ -549,6 +549,7 @@ class Wechat {
 
 
     function PayStatusReturn(){
+        global $C;
         $data = file_get_contents('php://input');
         if($data){
             $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);

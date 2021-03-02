@@ -15,10 +15,10 @@
 	.bg1 {background-color:#edfbf5;}
 	.bg2 {background-color:#92e8b1;}
 	.table {background:#AAAAAA;font:11pt Menlo,Consolas,"Lucida Console";border-collapse:collapse}
-	.info {background:none repeat scroll 0 0 #F3F3F3;border:0px solid #aaaaaa;color:#000000;font-size:11pt;line-height:160%;margin-bottom:1em;padding:1em;}
+	.info {background:none repeat scroll 0 0 #F3F3F3;border:0 solid #aaaaaa;color:#000000;font-size:11pt;line-height:160%;margin-bottom:1em;padding:1em;}
 	td {border:#ddd 1px solid;padding:5px}
 	.help {background:#F3F3F3;border-radius:10px 10px 10px 10px;font:12px verdana,arial,sans-serif;text-align:center;line-height:160%;padding:1em;}
-	.sql {background:#FFFFCC;border:1px solid #aaaaaa;color:#000000;font:arial,sans-serif;font-size:9pt;line-height:160%;margin-top:1em;padding:4px;}
+	.sql {background:#FFFFCC;border:1px solid #aaaaaa;color:#000000; font-size:9pt;line-height:160%;margin-top:1em;padding:4px;}
 	</style>
 </head>
 <body>
