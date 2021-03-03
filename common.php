@@ -755,3 +755,24 @@ function calcs($val=0, $tp='+', $val2=0, $decimal=0){
     $X += 0;
     return $X;
 }
+
+/**
+ * 将数组中的值递归转为string类型
+ * @param array $data
+ * @return array|mixed|string
+ */
+function array_value_string($data=[]){
+    if(is_array($data)){
+        foreach($data as $key => $value){
+            if(is_array($value)){
+                $value = array_value_string($value);
+            }else{
+                $value = (string)$value;
+            }
+            $data[$key] = $value;
+        }
+    }elseif(is_numeric($data)){
+        $data = (string)$data;
+    }
+    return $data;
+}
