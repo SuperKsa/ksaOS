@@ -30,14 +30,16 @@ class template {
             if(!$dir) {
                 $F = $sys[0]['file'];
                 if (stripos($F,'ksaos/app.php') && strtolower($tpl) == 'common/msg' && strtolower($sys[1]['function']) == 'msg' && strtolower($sys[1]['class']) == 'ksaos\app') {
-                    $F = $sys[1]['file'];
+                    $F = Files::name($sys[1]['file'], false) =='Is' ? $sys[2]['file'] : $sys[1]['file'];
                     if(strpos($F, ROOT.'ksaOS/Core/') === 0){
                         $F = PATHS.'model/.';
                     }
                 }
+
                 $dir = self::AutoTplDir($F, $tpl);
             }
         }
+
         return self::replace($tpl, $dir, $DirName);
     }
 
