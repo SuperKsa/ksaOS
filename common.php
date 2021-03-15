@@ -733,3 +733,46 @@ function number_wan($number=0, $unit='W', $precision=2){
     }
     return $number;
 }
+
+/**
+ * 高精度计算函数
+ * @param int $val 值1
+ * @param string $tp 计算方法 +=加 -=减 *=乘 /=除
+ * @param int $val2  值2
+ * @param int $decimal 小数点位数
+ */
+function calcs($val=0, $tp='+', $val2=0, $decimal=0){
+    $X = 0;
+    if($tp == '+'){
+        $X = bcadd($val, $val2, $decimal);
+    }elseif($tp == '-'){
+        $X = bcsub($val, $val2, $decimal);
+    }elseif($tp == '*'){
+        $X = bcmul($val, $val2, $decimal);
+    }elseif($tp == '/'){
+        $X = bcdiv($val, $val2, $decimal);
+    }
+    $X += 0;
+    return $X;
+}
+
+/**
+ * 将数组中的值递归转为string类型
+ * @param array $data
+ * @return array|mixed|string
+ */
+function array_value_string($data=[]){
+    if(is_array($data)){
+        foreach($data as $key => $value){
+            if(is_array($value)){
+                $value = array_value_string($value);
+            }else{
+                $value = (string)$value;
+            }
+            $data[$key] = $value;
+        }
+    }elseif(is_numeric($data)){
+        $data = (string)$data;
+    }
+    return $data;
+}

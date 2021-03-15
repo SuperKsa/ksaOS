@@ -637,7 +637,7 @@ class DB{
         $sql = $this->sql('update');
         if(is_array($data)){
             foreach($data as $key => $val){
-                $val = intval($val);
+                $val += 0;
                 if($val !== 0){
                     $data[$key] = '`'.$key.'`=`'.$key.'` '.($val>0 ? '+' : '').$val;
                 }
