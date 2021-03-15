@@ -29,6 +29,7 @@ class template {
 
             if(!$dir) {
                 $F = $sys[0]['file'];
+
                 if (stripos($F,'ksaos/app.php') && strtolower($tpl) == 'common/msg' && strtolower($sys[1]['function']) == 'msg' && strtolower($sys[1]['class']) == 'ksaos\app') {
                     $F = Files::name($sys[1]['file'], false) =='Is' ? $sys[2]['file'] : $sys[1]['file'];
                     if(strpos($F, ROOT.'ksaOS/Core/') === 0){
@@ -37,6 +38,10 @@ class template {
                 }
 
                 $dir = self::AutoTplDir($F, $tpl);
+                //兼容后台
+                if(strpos($F, 'admin.php') >0){
+                    $dir = PATHS.'admin/';
+                }
             }
         }
 
