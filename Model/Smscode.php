@@ -15,7 +15,20 @@ if(!defined('KSAOS')) {
 
 class Smscode{
 
-    public static function check($mobile, $smsID, $smsHash, $code){
+    /**
+     * 验证码校验函数
+     * @param int $mobile  需要校验的手机号
+     * @param int $smsID 短信ID
+     * @param string $smsHash 短信HASH
+     * @param int $code  验证码
+     * @param int $outTime 验证码有效期（秒） 默认=900
+     * @return array 始终返回数组 [
+    'success' =>0,
+    'msg' => '',
+    'mobile' => $mobile
+    ]
+     */
+    public static function check($mobile, $smsID, $smsHash, $code, $outTime=900){
         $return = [
             'success' =>0,
             'msg' => '',
@@ -58,9 +71,9 @@ class Smscode{
      */
     public static function send($mobile='', $callFun=false, $codeNum=6, $content=''){
         global $C;
-        $sendHours = 1; //最大发送次数时间单位 小时
-        $sendMaxNum = 10; //X小时内最大发送次数
-        $sendTime = 60; //每次发送间隔时间 秒
+        $sendHours = intval($C['setting']['SMS_sendHours']); //最大发送次数时间单位 小时
+        $sendMaxNum = intval($C['setting']['SMS_maxNum']); //X小时内最大发送次数
+        $sendTime = intval($C['setting']['SMS_intervals']); //每次发送间隔时间 秒
 
         $sendMsg = trim($content ? $content : $C['setting']['SMS_content']); //短信模板内容
         $API_url = $C['setting']['SMS_API'];
@@ -98,7 +111,7 @@ class Smscode{
                 if($sendNum){
                     if($sendNum >= $sendMaxNum){
                         $Returns['msg'] = '最大发送次数达到限制，请尝试更换手机号';
-                    }else{
+                    }elseif($sendTime >0){
                         $lastDt = DB('user_sms')->mobileLast($mobile);
                         if($lastDt && $lastDt['dateline'] + $sendTime > time()){
                             $Returns['msg'] = '发送间隔时间限制，请稍后重试';
