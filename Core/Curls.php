@@ -23,7 +23,7 @@ class Curls{
 	 * @param string $header 请求头数组
 	 * @param type $timeout 建立连接后的超时时间 秒
 	 * @param string $resolve 域名指定IP、端口的设置 每个元素以冒号分隔。格式： array("example.com:80:127.0.0.1")
-	 * @return type
+	 * @return array
 	 */
 	public static function send($url='', $post=[], $header=[], $timeout=15, $resolve=[], $referer=''){
 		global $C;

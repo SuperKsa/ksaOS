@@ -484,25 +484,7 @@ function bytes($val=0) {
  * @param string $g 全局层 ['msg'=>'操作成功','success'=>1,'locationUrl'=>'跳转地址']
  */
 function JSON($dt,$g=[]){
-	global $C;
-	$user = [];
-	foreach($C['user'] as $key => $value){
-		if(in_array($key, ['uid','name','avatar','sex'])){
-			$user[$key] = $value;
-		}
-	}
-	$dt = [
-		'uid' => $C['uid'],
-		'token' => $C['token'],
-		'user' => $user,
-		'msg' => '',
-		'success' => 0,
-		'locationUrl' => '',
-		'result' => $dt
-	];
-	$dt = array_merge($dt, $g);
-	echo json_encode($dt,JSON_UNESCAPED_UNICODE);
-	exit;
+	APP::json($dt, $g);
 }
 
 /**
@@ -520,10 +502,11 @@ function KSAUI($funName, $param =[]){
     exit;
 }
 
+
 /**
  * JSON编码强制中文不转码
- * @param type $value 需要编码的数据
- * @return type
+ * @param array $value 需要编码的数据
+ * @return false|string
  */
 function jsonEn($value=[]){
 	return json_encode($value,JSON_UNESCAPED_UNICODE);
@@ -531,8 +514,7 @@ function jsonEn($value=[]){
 
 /**
  * 获取当前用户IP地址
- * @global type $C
- * @return \type|string
+ * @return false|mixed|string
  */
 function IP() {
 	global $C;

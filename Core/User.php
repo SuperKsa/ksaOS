@@ -15,6 +15,9 @@ if(!defined('KSAOS')) {
 }
 
 class User{
+    //API输出时允许全局输出的user字段
+    static $userInfoField = ['uid','name','avatar','sex','mobile'];
+
     /**
      * 获取用户信息
      * @param int $id 用户ID，一个或数组
@@ -38,6 +41,22 @@ class User{
 	    return $data;
     }
 
+    /**
+     * 过滤API接口输出user字段
+     * @param array $user 用户信息
+     * @return array|mixed 返回过滤后的字段数据
+     */
+    static function apiInfo($user=[]){
+	    if(self::$userInfoField) {
+            foreach ($user as $key => $value) {
+                if (!in_array($key, self::$userInfoField)) {
+                    unset($user[$key]);
+                }
+            }
+        }
+        return $user;
+    }
+
 	/**
 	 * 校验用户token是否有效并自动登录
 	 * @param string $token 用户token（选传）由当前类函数userlogin生成的token
@@ -45,10 +64,11 @@ class User{
 	 */
 	static function isLogin($token=''){
 		global $C;
-		if($C['user']){
-			return $C['user'];
-		}
+
 		$user = self::checkToken($token);
+        if($user && $C['user'] && $C['user']['uid'] == $user['uid']){
+            return $C['user'];
+        }
 		if($user && $user['uid'] && $user['token']){
             cookies('token',$token,86400 * 15); //token保持在线
 			unset($user['salt'],$user['password']);

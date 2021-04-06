@@ -56,6 +56,27 @@ class APP extends Service{
 		self::$DB->close();
 	}
 
+	public static function setting($key=null, $value = null){
+	    //读取模式
+	    if($value === null){
+            $setting = DB('setting')->fetch_all();
+            if($key){
+                $setting = $setting[$key];
+            }
+            return $setting;
+        }else{
+            DB('setting')->insert($key, $value);
+            return $value;
+        }
+    }
+
+    /**
+     * 全局提示类 操作成功
+     * @param string $msg 提示信息
+     * @param array $data 返回给前台的数据
+     * @param false $confirm 该消息是否需经过前台确认
+     * @param string $url 是否需要跳转到指定URL
+     */
 	public static function Success($msg='', $data=[], $confirm=false, $url=''){
 	    if(!$data){
             $data = ['success'=>1];
@@ -77,27 +98,40 @@ class APP extends Service{
         $data = is_array($data) ? $data : [];
         $success = $success ? $success : ($data['success'] ? $data['success'] : 0);
         if($C['ajax']){
-            $user = [];
-            foreach($C['user'] as $key => $value){
-                if(in_array($key, ['uid','name','avatar','sex'])){
-                    $user[$key] = $value;
-                }
-            }
-            $dt = [
-                'uid' => $C['uid'],
-                'token' => $C['token'],
+            self::json($data, [
                 'isLogin' => $isLogin,
-                'user' => $user,
                 'msg' => $msg,
                 'success' => $success,
                 'confirm' => $confirm,
                 'locationUrl' => $url,
-                'result' => $data
-            ];
-            echo json_encode($dt,JSON_UNESCAPED_UNICODE);
+            ]);
         }else{
             include template::show('common/msg');
         }
+        exit;
+    }
+
+    /**
+     * 以JSON形式输出数据
+     * 用于API接口
+     * @param array $result 需要返回的数据
+     * @param array $data 全局字段
+     */
+    public static function json($result=[], $data=[]){
+        global $C;
+        $dt = [
+            'uid' => $C['uid'],
+            'token' => $C['token'],
+            'isLogin' => 0,
+            'user' => User::apiInfo($C['user']),
+            'msg' => '',
+            'success' => 0,
+            'confirm' => 0,
+            'locationUrl' => '',
+            'result' => $result
+        ];
+        $dt = array_merges($dt, $data);
+        echo json_encode($dt,JSON_UNESCAPED_UNICODE);
         exit;
     }
 	
