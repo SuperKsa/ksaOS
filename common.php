@@ -58,15 +58,16 @@ function CSSLOAD($file=''){
 	return $C['staticUrl'].$src.$S;
 }
 
+
 /**
  * 缓存器操作(直接使用RAM缓存器)
- * @param type $skey
- * @param type $data
- * @param type $ttl
- * @param type $isUpdate
- * @return type
+ * @param string $skey
+ * @param null $data
+ * @param int $ttl
+ * @param int $isUpdate
+ * @return Cache
  */
-function cache($skey, $data=NULL, $ttl=0, $isUpdate=0){
+function cache($skey='', $data=NULL, $ttl=0, $isUpdate=0){
 	if($data === NULL){
 		return APP::Cache('get', $skey);
 	}elseif($data ===''){
@@ -517,34 +518,8 @@ function jsonEn($value=[]){
  * @return false|mixed|string
  */
 function IP() {
-	global $C;
-	if(isset($C['IP']) && $C['IP']){
-		return $C['IP'];
-	}
-	$S = $_SERVER;
-	if(!isset($S['REMOTE_ADDR'])){
-		return false;
-	}
-	$ip = $S['REMOTE_ADDR'];
-	if (isset($S['HTTP_CLIENT_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $S['HTTP_CLIENT_IP'])) {
-		$ip = $S['HTTP_CLIENT_IP'];
-	} elseif(isset($S['HTTP_X_FORWARDED_FOR']) && preg_match_all('#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}#s', $S['HTTP_X_FORWARDED_FOR'], $matches)) {
-		foreach ($matches[0] as $val) {
-			if (!preg_match('#^(10|172\.16|192\.168)\.#', $val)) {
-				$ip = $val;
-				break;
-			}
-		}
-	}
-	if($ip =='::1'){
-		$ip = '127.0.0.1';
-	}
-	$C['IP'] = $ip;
-	$C['PROT'] = $_SERVER['REMOTE_PORT'];
-	define('IP', $C['IP']);
-	define('IPPORT', $C['PROT']);
-    define('USERAGENT', $_SERVER['HTTP_USER_AGENT']);
-	return $ip;
+    Rest::ipProt();
+	return Rest::ip();
 }
 
 /**

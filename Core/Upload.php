@@ -21,8 +21,7 @@ class Upload {
 	public $TempPath = '';
 	
 	public function BANexts(){
-		global $C;
-		$data = $C['setting']['Upload_BANexts'];
+		$data = APP::setting('UPLOAD/BANexts');
 		if($data){
 			$data = explode(',',$data);
 			$data = trims($data);
@@ -33,13 +32,13 @@ class Upload {
 	
 	/**
 	 * 获取系统最大允许上传值 KB
-	 * @global type $C
 	 * @return int
 	 */
 	public function MAXsize(){
 		global $C;
-		if($C['setting']['Upload_MAXsize']){
-			return intval($C['setting']['Upload_MAXsize'])  * 1024 * 1024;
+        $maxSize = APP::setting('UPLOAD/MAXsize');
+		if($maxSize){
+			return intval($maxSize)  * 1024 * 1024;
 		}
 		return 0;
 	}

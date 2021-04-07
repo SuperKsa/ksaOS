@@ -59,13 +59,18 @@ class APP extends Service{
 	public static function setting($key=null, $value = null){
 	    //读取模式
 	    if($value === null){
-            $setting = DB('setting')->fetch_all();
             if($key){
-                $setting = $setting[$key];
+                $keys = explode('/', $key);
+                $setting = DB('setting')->where('skey', $keys[0])->cache('setting_'.$keys[0])->fetch_first();
+                unset($keys[0]);
+                foreach($keys as $v){
+                    $v = trim($v);
+                    $setting = $setting[$v];
+                }
             }
             return $setting;
         }else{
-            DB('setting')->insert($key, $value);
+            DB('setting')->cache('setting_'.$key)->insert($key, $value);
             return $value;
         }
     }

@@ -186,12 +186,12 @@ class Service{
 		$this->hook(__CLASS__ , __FUNCTION__);
 		return $this;
 	}
-	
-	
-	/**
-	 * 全局变量与config初始化 $C变量为全局时使用
-	 * @global type $C
-	 */
+
+
+    /**
+     * 全局变量与config初始化 $C变量为全局时使用
+     * @return $this
+     */
 	private function __Event() {
 		global $C;
 		$C = [
@@ -280,7 +280,7 @@ class Service{
 	
 	private function __setting() {
 		global $C;
-		$setting = DB('setting')->fetch_all('skey');
+		$setting = DB('setting')->where('skey', 'system')->fetch_first();
 		if(isset($setting['CDN_url']) && $setting['CDN_url']){
 			$C['staticUrl'] = $setting['CDN_url'];
 		}
@@ -288,12 +288,11 @@ class Service{
 		$C['TITLE'] = isset($setting['sitename']) ? $setting['sitename'] : '';
 		return $this;
 	}
-	
-	/**
-	 * 用户自动登录
-	 * @global type $C
-	 * @return type
-	 */
+
+    /**
+     * 用户自动登录
+     * @return $this
+     */
 	private function __user() {
 		//如果是worker类框架 则直接略过用户识别
 		if(defined('__BIGER__')){
@@ -310,12 +309,11 @@ class Service{
 		$this->hook(__CLASS__ , __FUNCTION__ , 'end');
 		return $this;
 	}
-	
-	/**
-	 * 底层结束
-	 * @global type $C
-	 * @return $this
-	 */
+
+    /**
+     * 底层结束
+     * @return $this
+     */
 	private function __End() {
 		global $C;
 		//删除敏感全局字段
@@ -331,6 +329,7 @@ class Service{
 	public static function Date(){
 		return new Dates();
 	}
+
 	public static function debug($key='',$value=''){
 		$new = new Debug();
 		if($key && $value){

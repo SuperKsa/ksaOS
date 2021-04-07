@@ -16,6 +16,12 @@ if(!defined('KSAOS')) {
 }
 
 class Pay{
+    public static $TYPES = [
+        'wechat' => '微信支付',
+        'weapp' => '微信小程序',
+        'alipay' => '支付宝'
+    ];
+
     function Pay_getID($id){
         return DB('pay_data')->ID($id);
     }
@@ -49,18 +55,13 @@ class Pay{
 
     /**
      * 支付订单状态查询
-     * @param type $PayID 支付订单PayID
+     * @param int $PayID 支付订单PayID
      * @return array $returnData
      */
-    function query($PayID){
+    function query($PayID=0){
         $PayID = intval($PayID);
         $Data = self::Pay_getID($PayID);
         $queryDt = [];
-        $PayTypeName = [
-            'wechat' => '微信',
-            'alipay' => '支付宝',
-        ];
-
         $returnData = [
             //该订单数据是否是首次确认，用于后续数据更新
             //	0=从DB中读取的数据 1=第一次从API中确认用户已支付成功
@@ -69,14 +70,16 @@ class Pay{
 
             'success' => 0, //支付状态 1=成功
             'PayType' => $Data['PayType'], //支付方式
-            'PayTypeName' => $PayTypeName[$Data['PayType']], //支付方式名称
+            'PayTypeName' => self::$TYPES[$Data['PayType']], //支付方式名称
             'msg' => '', //消息内容
             'orderData' => $Data //当前支付订单DB数据
 
         ];
         if($Data['Status'] == 0){
             if($Data['PayType'] =='wechat'){
-                $queryDt = Wechat::pay_query($Data['DataOrderCode']);
+                $queryDt = WechatPay::query($Data['DataOrderCode']);
+            }elseif($Data['PayType'] =='weapp'){
+                $queryDt = WechatPay::query_jsapi($Data['DataOrderCode']);
             }elseif($Data['PayType'] =='alipay'){
                 $queryDt = Alipay::pay_query($Data['DataOrderCode']);
             }
@@ -115,7 +118,7 @@ class Pay{
         global $C;
         $uid = $C['uid'] && $C['uid']['user'] ? intval($C['uid']) : 0;
         $orderCode = Filter::int($orderCode);
-        $PayType = in_array($PayType,['wechat','alipay']) ? $PayType : '';
+        $PayType = self::$TYPES[$PayType] ? $PayType : '';
         $dataType = in_array($dataType,['goods','vip','expert']) ? $dataType : '';
         $dataID = Filter::int($dataID);
         $Total = floatval($Total);
@@ -157,9 +160,9 @@ class Pay{
                         'title' => $Title,
                         'total' => $Total,
                         'PayType' => $PayType,
-                        'IP' => $C['IP'],
-                        'IP_port' => $C['port'],
-                        'useragent' => $C['useragent'],
+                        'IP' => Rest::ip(),
+                        'IP_port' => Rest::ipProt(),
+                        'useragent' => Rest::useragent(),
                         'createDate' => time(),
                         'Status' => 0,
                         'PayCode' => self::orderCode()
@@ -169,10 +172,12 @@ class Pay{
                     //支付平台回调地址
                     $callbackUrl = $C['siteurl'].'pay/confirm/callback_wechat/';
                     //微信 下单
-                    if($PayType == 'wechat'){
+                    if($PayType == 'wechat' || $PayType == 'weapp'){
 
                         if($user['WXopenid']){
-                            $payDt = Wechat::Pay_create_jsapi([
+                            $wechatSetting = $PayType == 'weapp' ? APP::setting('WEAPP') : APP::setting('WECHAT');
+                            $wechatPaySetting = APP::setting('WECHATPAY');
+                            $payDt = WechatPay::create_jsapi($wechatSetting['APPID'], $wechatPaySetting['MCHID'], [
                                 'description' => $Title,
                                 'out_trade_no' => $PayData['PayCode'],
                                 'notify_url' => $callbackUrl,
@@ -184,7 +189,7 @@ class Pay{
                                     'openid' => $user['WXopenid'],
                                 ],
                                 'scene_info' => [
-                                    'payer_client_ip' => $C['IP'],
+                                    'payer_client_ip' => Rest::ip(),
                                 ],
                             ]);
 
@@ -234,18 +239,15 @@ class Pay{
         return $returnData;
     }
 
-
     /**
      * 支付成功后更新对应数据状态(仅限于首次支付成功处理) 当前模块内部函数
-     * @global type $C
-     * @param type $OrderData 订单数据
-     * @param type $dataType 订单类型
-     * @param type $dataID 订单ID
-     * @param type $orderCode 订单号
+     * @param array $OrderData 订单数据
+     * @param string $dataType 订单类型
+     * @param string $dataID 订单ID
+     * @param string $orderCode 订单号
      * @return boolean
      */
-    function __Pay_success_DatatypeStatus($OrderData, $dataType='',$dataID='',$orderCode=''){
-        global $C;
+    function __Pay_success_DatatypeStatus($OrderData=[], $dataType='',$dataID='',$orderCode=''){
 
         if(!$OrderData || !$OrderData['DataOrderCode'] || !$OrderData['PayID']){
             return false;

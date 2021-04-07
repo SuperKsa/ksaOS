@@ -31,7 +31,38 @@ class Rest{
      * @return mixed
      */
     static function useragent(){
-        return $_SERVER['HTTP_USER_AGENT'];
+        !defined('USERAGENT') && define('USERAGENT', $_SERVER['HTTP_USER_AGENT']);
+        return USERAGENT;
+    }
+
+    static function ip(){
+        if(!defined('IP')) {
+            $S = $_SERVER;
+            if (!isset($S['REMOTE_ADDR'])) {
+                return false;
+            }
+            $ip = $S['REMOTE_ADDR'];
+            if (isset($S['HTTP_CLIENT_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $S['HTTP_CLIENT_IP'])) {
+                $ip = $S['HTTP_CLIENT_IP'];
+            } elseif (isset($S['HTTP_X_FORWARDED_FOR']) && preg_match_all('#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}#s', $S['HTTP_X_FORWARDED_FOR'], $matches)) {
+                foreach ($matches[0] as $val) {
+                    if (!preg_match('#^(10|172\.16|192\.168)\.#', $val)) {
+                        $ip = $val;
+                        break;
+                    }
+                }
+            }
+            if ($ip == '::1') {
+                $ip = '127.0.0.1';
+            }
+            define('IP', $ip);
+        }
+        return IP;
+    }
+
+    static function ipProt(){
+        !defined('IPPORT') && define('IPPORT', $_SERVER['REMOTE_PORT']);
+        return IPPORT;
     }
 
 
@@ -131,7 +162,7 @@ class Rest{
             $param = [];
             if(strrpos($rule,'/') === false){
                 //如果规则参数的处理
-                list($rule, $param) = explode(':',$rule);
+                [$rule, $param] = explode(':',$rule);
                 $rule = trim($rule);
                 $param = $param ? explode(',',$param) : [];
             }
@@ -303,7 +334,7 @@ class Rest{
                 $whereField = $field;
                 //key支持别名（用尖括号隔开 右侧是where需要的字段）
                 if(strpos($field, '>') >0){
-                    list($field, $whereField) = explode('>', $field);
+                    [$field, $whereField] = explode('>', $field);
                     $field = trim($field);
                     $whereField = trim($whereField);
                 }
