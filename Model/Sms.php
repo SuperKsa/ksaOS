@@ -52,7 +52,7 @@ class SMS{
         }else{
             $smsSetting = APP::setting('SMS');
             $outTime = $smsSetting && $smsSetting['outTime'] > 0 ? ($smsSetting['outTime'] * 60) : 900;
-            $sms = DB('user_sms')->where(['smsID'=>$smsID])->fetch_first();
+            $sms = DB('sms_code')->where(['smsID'=>$smsID])->fetch_first();
 
             if(!$sms) {
                 $return['msg'] = '短信验证码参数错误';
@@ -65,10 +65,10 @@ class SMS{
             }elseif($code != $sms['code'] || $smsHash != md5($sms['code'].$sms['smsID'])){
                 $return['msg'] = '短信验证码错误';
             }elseif($sms['dateline'] < TIME - $outTime){//短信验证码超过n分钟
-                DB('user_sms')->where('smsID', $smsID)->update(['isUse'=>1]);
+                DB('sms_code')->where('smsID', $smsID)->update(['isUse'=>1]);
                 $return['msg'] = '短信验证码已失效';
             }else{
-                DB('user_sms')->where('smsID', $smsID)->update(['isUse'=>1]);
+                DB('sms_code')->where('smsID', $smsID)->update(['isUse'=>1]);
                 $return['success'] = 1;
             }
         }
@@ -115,13 +115,13 @@ class SMS{
             }
             //查询一定时间内的发送次数
             if($setting['sendHours'] > 0 && $setting['maxNum'] >0) {
-                $sendNum = DB('user_sms')->where([['mobile',$mobile],['dateline','>',3600*$setting['sendHours']], ['isUse',0], 'actions' => $action])->fetch_count();
+                $sendNum = DB('sms_code')->where([['mobile',$mobile],['dateline','>',3600*$setting['sendHours']], ['isUse',0], 'actions' => $action])->fetch_count();
                 if ($sendNum >= $setting['maxNum']) {
                     $Returns['msg'] = '最大发送次数达到限制，请尝试更换手机号';
                 }
             }
             if($setting['intervals'] >0){
-                $lastDt = DB('user_sms')->where(['mobile'=>$mobile,'isUse'=>0, 'actions' => $action])->order('smsID')->limit(0,1)->fetch_first();
+                $lastDt = DB('sms_code')->where(['mobile'=>$mobile,'isUse'=>0, 'actions' => $action])->order('smsID')->limit(0,1)->fetch_first();
                 if($lastDt && $lastDt['dateline'] + $setting['intervals'] > time()){
                     $Returns['msg'] = '发送间隔时间限制，请('.($lastDt['dateline'] + $setting['intervals'] - TIME).'秒后)重试';
                 }
@@ -134,7 +134,7 @@ class SMS{
                 $send = self::send($action, $mobile, $sendMsg, $callFun);
                 if($send['success'] && $send['smslogid']){
                     //发送成功
-                    $smsID = DB('user_sms')->insert([
+                    $smsID = DB('sms_code')->insert([
                         'actions' => $action,
                         'smslogid' => $send['smslogid'],
                         'uid' => $C['uid'] ? $C['uid'] : 0,
