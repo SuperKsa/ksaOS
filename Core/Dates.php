@@ -173,7 +173,7 @@ class Dates{
 	 */
 	public static function timestamp($time=NULL, $F=10){
 		//如果日期不存在或者为第二个参数值
-		if(!$time || $time>0 && $time <20){
+		if($time === NULL || $time>0 && $time <20){
 			$F = $time >0 ? $time : $F;
 			$time = self::mtime($F);
 		//如果传入的是日期格式
