@@ -69,6 +69,18 @@ class Filter{
     }
 
     /**
+     * 过滤所有非字母的字符
+     * @param null $str 需要过滤的字符
+     * @return string|string[]|null
+     */
+    static function abc($str=NULL){
+        if($str !== NULL) {
+            $str = preg_replace('/[^a-z]/i', '', $str);
+        }
+        return $str;
+    }
+
+    /**
      * 字符串剥离html标签并实体化
      * @param string $str
      * @return string
