@@ -46,6 +46,15 @@ class Aes256{
         return $message;
     }
 
+    /**
+     * AES256解密
+     * @param string $ciphertext 密文
+     * @param string $associatedData 附加字符
+     * @param string $nonceStr 随机字符
+     * @param string $AesKEY 密钥
+     * @return string
+     * @throws \SodiumException
+     */
     public static function decode(string $ciphertext, string $associatedData, string $nonceStr, string $AesKEY) {
         $ciphertext = base64_decode($ciphertext);
 

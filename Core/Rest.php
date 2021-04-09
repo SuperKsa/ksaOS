@@ -84,7 +84,6 @@ class Rest{
      * @return mixed|null
      */
     static function m($n=null){
-        global $C;
         $d = APP::$MOD;
         if(is_null($n)){
             return $d;
@@ -128,6 +127,49 @@ class Rest{
      */
     static function post($field=null, $rule=null, $deft=null){
         return self::_dt(self::orgData('POST'), $field, $rule, $deft);
+    }
+
+    /**
+     * 获取HTTP请求中的header值
+     * 参数用法参考 self::_dt()
+     * 如果需要返回全部数据时，注意键名全部为大写，横杠(-) = _
+     * @param null $field
+     * @param null $rule
+     * @param null $deft
+     * @return array|string|null
+     */
+    static function header($field=null, $rule=null, $deft=null){
+        if($field){
+            if(is_array($field)){
+                $newField = [];
+                foreach($field as $key => $value){
+                    $key = str_replace('-', '_', $key);
+                    $newField[strtoupper($key)] = $value;
+                }
+                $dt = self::_dt(self::orgData('HEADER'), $newField, $rule, $deft);
+                $data = [];
+                if(is_array($dt)){
+                    foreach($field as $k => $v){
+                        $sk = strtoupper($k);
+                        if(isset($dt[$sk])){
+                            $data[$k] = $dt[$sk];
+                        }
+                    }
+                }
+                return $data;
+            }else{
+                $field = str_replace('-', '_', strtoupper($field));
+            }
+        }
+        return self::_dt(self::orgData('HEADER'), $field, $rule, $deft);
+    }
+
+    /**
+     * 获取请求中的原始数据
+     * @return false|string
+     */
+    static function input(){
+        return file_get_contents('php://input');
     }
 
     /**
@@ -259,9 +301,9 @@ class Rest{
      * @param string $M 请求方式
      * @return array
      */
-    static function orgData($M=''){
+    static function orgData($M=NULL){
         $M = strtoupper($M);
-        if(!$M || !in_array($M,['GET'])){
+        if($M === NULL || !in_array($M,['GET'])){
             parse_str(file_get_contents('php://input'), $inputdata);
         }
         $inputdata = (array)$inputdata;
@@ -279,26 +321,39 @@ class Rest{
             case 'DELETE':
                 $data = $inputdata;
                 break;
+            case 'HEADER':
+                $data = [];
+                foreach ($_SERVER as $key => $value) {
+                    if(strpos($key, 'HTTP_') === 0){
+                        $data[substr($key, 5)] = $value;
+                    }
+                }
+                break;
+            case 'FILES' :
+                $data = [];
+                if($_FILES){
+                    foreach($_FILES as $key => $value){
+                        $data[$key] = $data[$key] ? $data[$key] : [];
+                        if(is_array($value['name'])){
+                            foreach($value as $k => $val){
+                                foreach($val as $k1 => $v1){
+                                    $data[$key][$k1][$k] = $v1;
+                                }
+                            }
+                        }else{
+                            $data[$key] = $value;
+                        }
+                    }
+                }
+                break;
             default:
                 $data = $_GET;
                 break;
         }
-        if(!$M){
+
+        if($M === NULL){
+            $data = array_merges($data, self::orgData('FILES'));
             $data = array_merges($data, $inputdata);
-        }
-        if($_FILES){
-            foreach($_FILES as $key => $value){
-                $data[$key] = $data[$key] ? $data[$key] : [];
-                if(is_array($value['name'])){
-                    foreach($value as $k => $val){
-                        foreach($val as $k1 => $v1){
-                            $data[$key][$k1][$k] = $v1;
-                        }
-                    }
-                }else{
-                    $data[$key] = $value;
-                }
-            }
         }
         return (array)$data;
     }

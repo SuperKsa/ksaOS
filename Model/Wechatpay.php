@@ -29,6 +29,8 @@ class WechatPay {
     //微信支付退款订单接口地址
     private static $WECHAT_API_REFUNDS= '/v3/refund/domestic/refunds';
 
+    private static $CERTIFICATES_API = '/v3/certificates';
+
 
     /**
      * 微信支付 JSAPI下单函数
@@ -205,6 +207,62 @@ class WechatPay {
             $sigin = base64_encode($certificate);
         }
         return $sigin;
+    }
+
+
+    /**
+     * 支付结果回调的签名验证函数
+     * @param string $serial 证书序列号 HTTP Wechatpay_Serial
+     * @param string $sign 回调签名 HTTP Wechatpay_Signature
+     * @param int $timestamp 回调时间戳 HTTP Wechatpay_Timestamp
+     * @param string $nonceStr 回调随机串 HTTP Wechatpay_Nonce
+     * @param string $post 回调请求的post原文 POST
+     * @return bool
+     */
+    static function callbackSignVerify($serial='', $sign='', $timestamp=0, $nonceStr='', $post=''){
+        $certificates = '';
+        foreach(WechatPay::certificates() as $value){
+            if($value['serial_no'] == $serial){
+                $certificates = $value['encrypt_certificate']['ciphertext'];
+            }
+        }
+        $checkResult = false;
+        $Wechatpay_Signature = base64_decode($sign);
+        if($certificates && $Wechatpay_Signature){
+            $pubkeyid = openssl_get_publickey($certificates);
+            $verifyContent = $timestamp."\n".$nonceStr."\n".$post."\n";
+            $checkResult = (bool)openssl_verify($verifyContent, $Wechatpay_Signature, $pubkeyid, OPENSSL_ALGO_SHA256);
+            openssl_free_key($pubkeyid);
+        }
+        return $checkResult;
+    }
+
+    /**
+     * 获得证书列表
+     * 60分钟自动抓取一次
+     */
+    static function certificates(){
+        $paysetting = APP::setting('WECHATPAY');
+        $cacheKey = 'WechatPaycertificates_'.$paysetting['MCHID'];
+        if(!($data = Cache($cacheKey))){
+            $Authorization = self::authorizationV3('GET', self::$CERTIFICATES_API);
+
+            $data = Curls::send(self::$WECHAT_API.self::$CERTIFICATES_API, '',  [
+                'Authorization' => $Authorization['Authorization'],
+                'Accept' => 'application/json',
+                'User-Agent' => Rest::useragent()
+            ]);
+            $data = $data['data'] ? json_decode($data['data'], true) : [];
+            $data = $data['data'];
+            $data && Cache($cacheKey, $data, 3600);
+        }
+        $wechatPaySetting = APP::setting('WECHATPAY');
+        //自动解密证书
+        foreach($data as $key => $value){
+            $value['encrypt_certificate']['ciphertext'] = Aes256::decode($value['encrypt_certificate']['ciphertext'], $value['encrypt_certificate']['associated_data'], $value['encrypt_certificate']['nonce'], $wechatPaySetting['APIKEY']);
+            $data[$key] = $value;
+        }
+        return $data;
     }
 
     /**
