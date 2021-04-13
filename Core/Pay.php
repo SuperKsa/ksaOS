@@ -27,30 +27,30 @@ class Pay{
     }
 
     /**
-     * 生成一条不重复订单编号 18-24位
+     * 生成一条不重复订单编号 14-24位
      * 0-14位固定日期（秒级） 15-24位为自增ID
      * 依靠redis完成自增值机制
      * @param int $N 需要生成多少位(默认20) 值范围18-24
      * @return false|string
      */
     static function orderCode($N=20){
-        $N = $N < 18 ? 18 : $N;
-        $N = $N > 24 ? 24 : $N;
-        $N = $N - 14;//前缀日期固定14位 得到剩余补位数量
-        $cacheK = '_orderCode_';
-        //0-14位固定日期（秒级） 15-24位为自增
-        $str = date('YmdHis');
-        $X = Cache::RAM('get',$cacheK);
-        $Xx = Cache::RAM('get',$cacheK.'_k_');
-        if($Xx < time()){
-            $X = 1;
-            Cache::RAM('set',$cacheK.'_k_', time(),0);
-        }else{
-            $X ++;
-        }
-        Cache::RAM('set',$cacheK,$X,0);
-        $str .= str_pad($X,$N,'0', STR_PAD_LEFT);
-        return $str;
+        $str = intval(date('Y')) - 2020; //第一组 1-2位 年差值
+        $str .= date('mdHis'); //第二组 4位 月日
+        list($ms, $sec) = explode(' ', microtime());
+        //毫秒控制6位
+        $ms = str_pad(substr($ms, 2, 6), 6, '0', STR_PAD_RIGHT); //右侧补0
+        $str += $sec; //累加10位时间戳
+        $str .= $ms; //追加毫秒数
+        $str = substr($str, 1);
+        //利用缓存 相同号码下自增
+        $cacheK = '_orderCodeAuto_'.$str;
+        $auto = Cache::RAM('get', $cacheK);
+        $auto = $auto > 0 ? $auto : 10;
+        $auto ++;
+        Cache::RAM('set', $cacheK, $auto, 1);
+        $str .= $auto;
+        $str .= mt_rand(100000, 999999); //补充6位随机码 最终达到至少24位
+        return substr($str, 0, $N);
     }
 
     /**

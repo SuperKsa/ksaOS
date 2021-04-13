@@ -18,15 +18,41 @@ if(!defined('KSAOS')) {
 class Filter{
 
     /**
+     * 保留小数位 不作舍入处理
+     * @param string $val 原始值
+     * @param int $N 小数位位数(1|2|3..) 或者精度(0.001)
+     * @return float|int
+     */
+    static function floatvalF($val=NULL,$N=0){
+        if(!is_null($val)) {
+            if (strpos($N, '0.') === 0) {
+                $N = strlen(substr($N, 2));//小数位精度位数
+            }
+            if ($N > 0) {
+                $val += 0; //解决浮点数作为string传入后带来的判断问题
+                if (is_float($val) || is_double($val)) {
+                    $N = pow(10, $N);
+                    $val = floor($val * $N) / $N;
+                } else {
+                    $val = floor($val);
+                }
+            } else {
+                $val = floor($val);
+            }
+        }
+        return $val;
+    }
+
+    /**
      * 过滤为开关值(返回1或0)
      * @param string $str
      * @return int 返回：0=不存在(0|null|false|'') 1=存在
      */
-    static function intif($str=''){
-        if(!$str || $str == 0 || $str === '' || is_null($str) || $str === false){
-            return 0;
+    static function intif($str=NULL){
+        if($str && ($str === true || $str == 1 || strtoupper($str) === 'TRUE')){
+            return 1;
         }
-        return 1;
+        return 0;
     }
 
     /**
@@ -48,7 +74,7 @@ class Filter{
      * @return string
      */
     static function intfloat($str='') {
-        preg_match('/-?[0-9]+(\.[0-9]+)/', $str, $tmp);
+        preg_match('/-?[0-9]+(\.[0-9]+)?/', $str, $tmp);
         if($tmp){
             return $tmp[0];
         }
@@ -130,9 +156,9 @@ class Filter{
 
     /**
      * 获取指定日期时间戳
-     * @param type $time 指定日期或者时间戳(默认当前时间) 如该值小于20则处理为第二个参数值
-     * @param type $F 时间戳位数
-     * @return timestamp UTC时间戳 不足$F位则补0
+     * @param string $time 指定日期或者时间戳(默认当前时间) 如该值小于20则处理为第二个参数值
+     * @param int $F 时间戳位数
+     * @return int  UTC时间戳 不足$F位则补0
      */
     public static function timestamp($time=NULL, $F=10){
         return $time ? Dates::timestamp($time, $F) : '';

@@ -239,21 +239,7 @@ function ints($dt,$nozero=0,$array_unique=0){
  * @return float
  */
 function roundF($val='',$N=0){
-	if(strpos($N,'0.') === 0){
-		$N = strlen(substr($N,2));//小数位精度位数
-	}
-	if($N>0){
-		$val += 0; //解决浮点数作为string传入后带来的判断问题
-		if(is_float($val) || is_double($val)){
-			$N = pow(10, $N);
-			$val = floor($val * $N) / $N;
-		}else{
-			$val = floor($val);
-		}
-	}else{
-		$val = floor($val);
-	}
-	return $val;
+	return Filter::floatvalF($val, $N);
 }
 
 /**
@@ -458,25 +444,52 @@ function cstripslashes($string='') {
 }
 
 
-/**
- * 根据储存单位计算字节
- * @param type $v 单位：1K 1M 1G 1T
- * @return type
- */
-function bytes($val=0) {
+//储存单位 键值对
+define('KSAOS_BUTE_UNITS', [
+    'KB' => 1,
+    'MB' => 2,
+    'GB' => 3,
+    'TB' => 4,
+    'PB' => 5,
+    'EB' => 6,
+    'ZB' => 7,
+    'YB' => 8
+]);
 
-	$val = trim($val);
-	$g = strtolower($val{strlen($val)-1});
-	$val = floatval($val);
-	switch($g) {
-		case 't': $val *= 1024;
-		case 'g': $val *= 1024;
-		case 'm': $val *= 1024;
-		case 'k': $val *= 1024;
-	}
-	return $val;
+/**
+ * 根据储存单位转字节
+ * @param int $bytes 转换值
+ * @param string $unit 支持的单位 KB MB GB TB PB EB ZB YB
+ * @param int $decimal 保留小数位数
+ * @return int|string
+ */
+function toBytes($val=0, $unit='KB', $decimal=3) {
+    $unit = strtoupper($unit);
+    return calcs($val, '*', pow(1024, KSAOS_BUTE_UNITS[$unit]), $decimal);
 }
 
+/**
+ * 字节转换为其他单位(不舍入)
+ * @param int $bytes 字节值
+ * @param string $unit 支持的单位 KB MB GB TB PB EB ZB YB
+ * @param int $decimal 保留小数位数
+ * @return float
+ */
+function bytes2($bytes=0, $unit='KB', $decimal=3){
+    $unit = strtoupper($unit);
+    return calcs($bytes, '/', pow(1024, KSAOS_BUTE_UNITS[$unit]), $decimal);
+}
+
+/**
+ * 字节转换为其他单位（舍入）
+ * @param int $bytes 字节值
+ * @param string $unit 支持的单位 KB MB GB TB PB EB ZB YB
+ * @param int $decimal 保留小数位数
+ * @return float
+ */
+function bytes2round($bytes=0, $unit='KB', $decimal=3){
+    return round(bytes2($bytes, $unit, $decimal+1), $decimal);
+}
 
 
 /**
