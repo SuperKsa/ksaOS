@@ -22,7 +22,7 @@ class Weapp {
     //AccessToken 接口地址
     private static $ACCESS_TOKEN_API = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}';
     //小程序统一服务消息发送接口
-    private static $MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send';
+    private static $MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=';
 
     //获取用户资料接口
     private static $API_USERINFO = 'https://api.weixin.qq.com/sns/jscode2session?appid={appid}&secret={appsecret}&js_code={code}&grant_type=authorization_code';
@@ -60,18 +60,18 @@ class Weapp {
      * @param array $mp_template_msg 公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息
      */
     static function MessageSend($APPID='', $AppSecret='', $sendData=[]){
-        $setting = APP::setting('WEAPP');
         $token = Wechat::AccessToken($APPID, $AppSecret);
         $touser = $sendData['touser'];
         $oldData = $sendData;
-        $oldData['appid'] = $setting['APPID'];
+        $wechatSetting = APP::setting('WECHAT');
+        $oldData['appid'] = $wechatSetting['APPID'];
         unset($oldData['touser']);
         $sendData = [
             'access_token' => $token,
             'touser' => $touser,
             'mp_template_msg' => $oldData
         ];
-        $send = Curls::send(self::$MessageSend_API.'?access_token='.$token, jsonEn($sendData));
+        $send = Curls::send(self::$MessageSend_API.$token, jsonEn($sendData));
         $send['data'] = $send['data'] ? json_decode($send['data'], 1) : [];
         if($send['data']['errcode'] == 0 && $send['data']['errmsg'] =='ok'){
             return true;
