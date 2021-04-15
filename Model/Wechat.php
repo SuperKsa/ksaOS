@@ -32,7 +32,7 @@ class Wechat {
     private static $WEAPP_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send';
 
     //服务号统一服务消息发送接口
-    private static $SERVICE_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/template/send';
+    private static $SERVICE_MessageSend_API = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=';
 
     //获取前端ticket jsapi接口地址
     private static $TICKET_API_JSAPI = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={token}&type=jsapi';
@@ -286,7 +286,7 @@ class Wechat {
 
     static function Service_MessageSend($APPID='', $AppSecret='', $sendData=[]){
         $token = self::AccessToken($APPID, $AppSecret);
-        $send = Curls::send(self::$SERVICE_MessageSend_API.'?access_token='.$token, jsonEn($sendData));
+        $send = Curls::send(self::$SERVICE_MessageSend_API.$token, jsonEn($sendData));
         $send['data'] = $send['data'] ? json_decode($send['data'], 1) : [];
         if($send['data']['errcode'] == 0 && $send['data']['errmsg'] =='ok'){
             return true;
