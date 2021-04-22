@@ -129,6 +129,10 @@ class Rest{
         return self::_dt(self::orgData('POST'), $field, $rule, $deft);
     }
 
+    static function file($field=null){
+        return self::_dt(self::orgData('FILES'), $field);
+    }
+
     /**
      * 获取HTTP请求中的header值
      * 参数用法参考 self::_dt()
@@ -170,6 +174,10 @@ class Rest{
      */
     static function input(){
         return file_get_contents('php://input');
+    }
+
+    static function inputJson(){
+        return json_decode(self::input(), true);
     }
 
     /**
