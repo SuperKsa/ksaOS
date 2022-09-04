@@ -183,7 +183,7 @@ class SMS{
             $Returns['msg'] = '手机号码错误';
         }else{
             //发送成功
-            $Returns['smslogid'] = DB('sms')->insert([
+            $Returns['smslogid'] = DB('user_sms')->insert([
                 'actions' => $action,
                 'uid' => $C['uid'] ? $C['uid'] : 0,
                 'mobile' => $mobile,
@@ -200,7 +200,7 @@ class SMS{
             $api = $setting['API'].'?'.implode('&',$post);
             $Curl = Curls::send($api);
             if($callFun && call_user_func($callFun, $Curl['data']) === true){
-                DB('sms')->where('smslogid', $Returns['smslogid'])->update(['sendStatus'=>1, 'apiReturn'=>$Curl['data']]);
+                DB('user_sms')->where('smslogid', $Returns['smslogid'])->update(['sendStatus'=>1, 'apiReturn'=>$Curl['data']]);
             }
             $Returns['result'] = $Curl['data'];
             if(!$Curl['error']){
