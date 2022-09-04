@@ -24,7 +24,7 @@ class Error {
 	}
 	//脚本停止后执行函数
 	static function Stop(){
-		//echo '<br>Error:Stop';
+
 	}
 	//警示类错误处理
 	static function Warn($code=0,$msg='', $file='', $line=0){
@@ -33,7 +33,6 @@ class Error {
 	}
 	//致命性错误处理
 	static function Exc($E=NULL, $errorCode=0){
-		$Type = 'system';
 		if(isset($E->isDB)) {
 			$Type = 'db';
 			$Msg = '('.$E->code.') '. self::clear(str_replace($E->pre, '', $E->getMessage()));
@@ -108,7 +107,7 @@ class Error {
 		
 	}
 	
-	private static function show($type, $Msg, $phpmsg = '', $errorCode) {
+	private static function show($type, $Msg, $phpmsg = '', $errorCode=0) {
 		$title = $type == 'db' ? '数据库' : '系统';
 		if(defined('__BIGER__')){
 			echo "■■■■■■■■■■■■■ KSAOS {$title}错误 ■■■■■■■■■■■■■\n";
@@ -125,7 +124,7 @@ class Error {
 		exit;
 	}
 
-	static function log($type='system', $message) {
+	static function log($type='system', $message='') {
 		if(defined('__BIGER__')){
 			return;
 		}

@@ -51,7 +51,7 @@ class APP extends Service{
 	}
 	
 	//模块执行结束
-	function __End(){
+    public static function __End(){
 		self::$memory->close();
 		self::$DB->close();
 	}
