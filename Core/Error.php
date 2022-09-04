@@ -17,7 +17,7 @@ class Error {
 	const _name = 'ksaOS错误处理类';
 	
 	static function register(){
-		error_reporting(E_ERROR);
+		!defined('NOT_ERROR') && error_reporting(E_ERROR);
 		set_error_handler([__CLASS__, 'Warn']);
 		set_exception_handler([__CLASS__, 'Exc']);
 		register_shutdown_function([__CLASS__, 'Stop']);

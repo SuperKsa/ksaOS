@@ -159,7 +159,7 @@ class IS{
         $factor = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
         $sign = 0;
         for($i = 0; $i < 17; $i++ ){
-            $sign += intval($str{$i}) * $map[$i];
+            $sign += intval($str[$i]) * $map[$i];
         }
         $n = $sign % 11;
         if ($factor[$n] == $N[8][0]){

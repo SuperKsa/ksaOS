@@ -51,7 +51,7 @@ class APP extends Service{
 	}
 	
 	//模块执行结束
-    public static function __End(){
+	function __End(){
 		self::$memory->close();
 		self::$DB->close();
 	}
@@ -102,7 +102,7 @@ class APP extends Service{
         global $C;
         $data = is_array($data) ? $data : [];
         $success = $success ? $success : ($data['success'] ? $data['success'] : 0);
-        if($C['ajax']){
+        if($C['ajax'] || defined('IS_API')){
             self::json($data, [
                 'isLogin' => $isLogin,
                 'msg' => $msg,
