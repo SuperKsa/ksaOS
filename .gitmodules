@@ -1,0 +1,3 @@
+[submodule "ksaOS"]
+	path = ksaOS
+	url = https://gitee.com/ksaos/ksaOS.git
