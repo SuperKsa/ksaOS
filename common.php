@@ -746,3 +746,17 @@ function array_value_string($data=[]){
     }
     return $data;
 }
+
+/**
+ * 生成标准UUID
+ * @return string
+ */
+function  Uuid(){
+    $chars = md5(uniqid(mt_rand(), true));
+    $uuid = substr ( $chars, 0, 8 ) . '-'
+        . substr ( $chars, 8, 4 ) . '-'
+        . substr ( $chars, 12, 4 ) . '-'
+        . substr ( $chars, 16, 4 ) . '-'
+        . substr ( $chars, 20, 12 );
+    return $uuid ;
+}
