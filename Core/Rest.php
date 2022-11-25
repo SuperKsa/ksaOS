@@ -176,8 +176,10 @@ class Rest{
         return file_get_contents('php://input');
     }
 
-    static function inputJson(){
-        return json_decode(self::input(), true);
+    static function inputJson($field=null, $rule=null, $deft=null){
+        $input = self::input();
+        $input = $input ? json_decode(self::input(), true) : [];
+        return self::_dt($input, $field, $rule, $deft);
     }
 
     /**
