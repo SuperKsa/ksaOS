@@ -760,3 +760,30 @@ function  Uuid(){
         . substr ( $chars, 20, 12 );
     return $uuid ;
 }
+
+/**
+ * 生成一条不重复编号 24位
+ * 0-14位固定日期（秒级） 15-24位为自增ID
+ * 依靠redis完成自增值机制
+ * @param int $N 需要生成多少位(默认20) 值范围18-24
+ * @return false|string
+ */
+function UniCode24($cacheKey='__KSAOS_UniCode24__'){
+    $str = intval(date('Y')) - 2020; //第一组 1-2位 年差值
+    $str .= date('mdHis'); //第二组 4位 月日
+    list($ms, $sec) = explode(' ', microtime());
+    //毫秒控制6位
+    $ms = str_pad(substr($ms, 2, 6), 6, '0', STR_PAD_RIGHT); //右侧补0
+    $str .= $sec; //累加10位时间戳
+    $str .= $ms; //追加毫秒数
+    $str = substr($str, 1);
+    //利用缓存 相同号码下自增
+    $cacheKey .= $str;
+    $auto = Cache::RAM('get', $cacheKey);
+    $auto = $auto > 0 ? $auto : 10;
+    $auto ++;
+    Cache::RAM('set', $cacheKey, $auto, 1);
+    $str .= $auto;
+    $str .= mt_rand(100000, 999999); //补充6位随机码 最终达到至少24位
+    return $str;
+}
