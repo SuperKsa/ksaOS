@@ -671,12 +671,15 @@ class DB{
 		$sql = $this->sql('update');
 
 		foreach($data as $key => $val){
+            $thsStep = $step;
 			$s = '=';
 			if($step){
                 $k = substr($val, 0,1);
                 if(in_array($k, ['+', '-'])){
                     $val = abs($val);
                     $s = $s.' `'.$key.'` '.($k =='-' ? '-' : '+');
+                }else{
+                    $thsStep = false;
                 }
 			}
             //如果值不存在 但值是数组、字符串 则调整值为NULL
@@ -685,7 +688,7 @@ class DB{
             }
 			//送到修饰符处理步骤 进一步对val进行严格处理
             list($field, $val, $tp) = $this->__modify($key, $val,1);
-            $val = $step ? $val : (is_null($val) ? 'NULL' : '\''.$val.'\'');
+            $val = $thsStep ? $val : (is_null($val) ? 'NULL' : '\''.$val.'\'');
 			$data[$key] = '`'.$field.'`'.$s.$val;
 		}
 		$set = implode(' , ',$data);
@@ -746,6 +749,7 @@ class DB{
             $val = str_replace(['\\\\', '\\\'', '\\"', '\'\''], '', $val);
             $val = caddslashes($val);
         }
+
 
 		switch($tp){
 			case 'int': //纯数字
