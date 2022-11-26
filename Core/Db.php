@@ -674,8 +674,10 @@ class DB{
 			$s = '=';
 			if($step){
                 $k = substr($val, 0,1);
-                $val = abs($val);
-                $s = $s.' `'.$key.'` '.($k =='-' ? '-' : '+');
+                if(in_array($k, ['+', '-'])){
+                    $val = abs($val);
+                    $s = $s.' `'.$key.'` '.($k =='-' ? '-' : '+');
+                }
 			}
             //如果值不存在 但值是数组、字符串 则调整值为NULL
             if(!$val && is_array($val)){
