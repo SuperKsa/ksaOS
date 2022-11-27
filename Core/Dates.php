@@ -36,7 +36,7 @@ class Dates{
 
 	/**
 	 * 获取今日零点时间戳
-	 * @return timestamp
+	 * @return int
 	 */
 	public static function today(){
 		return strtotime(date('Y-m-d',time()));
