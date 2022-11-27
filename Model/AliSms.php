@@ -55,7 +55,7 @@ class Alisms{
 
     private static function sign($sign=''){
         $sign = 'GET&%2F&'.urlencode($sign);
-        $sign = urlencode(HmacSha::Sha1($sign, self::$accessKeySecret.'&'));
+        $sign = urlencode(Hmacsha::Sha1($sign, self::$accessKeySecret.'&'));
         return $sign;
     }
 
@@ -107,10 +107,16 @@ class Alisms{
      * @param $Volume int 音量 1-100 默认100
      * @param $Speed int 播报语速 -500 - 500 默认200
      * @param $OutId string 预留自定义ID 比如提前生成的本地业务ID
-     * @param $callFun func 请求完成后立即回调
+     * @param $callFun callable 请求完成后立即回调
+    {
+    "Code": "OK",
+    "Message": "OK",
+    "RequestId": "D9CB3933-9FE3-4870-BA8E-2BEE91B69D23",
+    "CallId": "116012354148^10281378****"
+    }
      * @return array|mixed 返回原始数据
      */
-    public static function voice($mobile='', $TemplateCode='', $TemplateParam=[], $CalledShowNumber, $PlayTimes=2, $Volume=100, $Speed= 200, $OutId='', $callFun=false){
+    public static function voice($mobile='', $TemplateCode='', $TemplateParam=[], $CalledShowNumber='', $PlayTimes=2, $Volume=100, $Speed= 0, $OutId='', $callFun=false){
         $apiUrl = 'https://dyvmsapi.aliyuncs.com/'; //发送地址
 
         $TemplateParam = $TemplateParam ? json_encode($TemplateParam) : '';
@@ -133,14 +139,7 @@ class Alisms{
 
         $res = $Curl['data'] ? json_decode($Curl['data'], true) : [];
         $callFun && call_user_func($callFun, $res);
-        /*
-{
-  "Code": "OK",
-  "Message": "OK",
-  "RequestId": "D9CB3933-9FE3-4870-BA8E-2BEE91B69D23",
-  "CallId": "116012354148^10281378****"
-}
-         */
+
         return $res;
     }
 

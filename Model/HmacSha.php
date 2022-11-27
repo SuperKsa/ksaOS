@@ -15,7 +15,7 @@ if(!defined('KSAOS')) {
     exit('Error.');
 }
 
-class HmacSha{
+class Hmacsha{
     /**
      * hmac_sha1算法
      * @param $str string 源串
