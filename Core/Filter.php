@@ -23,7 +23,7 @@ class Filter{
      * @param int $N 小数位位数(1|2|3..) 或者精度(0.001)
      * @return float|int
      */
-    static function floatvalF($val=NULL,$N=0){
+    public static function floatvalF($val=NULL,$N=0){
         if(!is_null($val)) {
             if (strpos($N, '0.') === 0) {
                 $N = strlen(substr($N, 2));//小数位精度位数
@@ -48,7 +48,7 @@ class Filter{
      * @param string $str
      * @return int 返回：0=不存在(0|null|false|'') 1=存在
      */
-    static function intif($str=NULL){
+    public static function intif($str=NULL){
         if($str && ($str === true || $str == 1 || strtoupper($str) === 'TRUE')){
             return 1;
         }
@@ -60,7 +60,7 @@ class Filter{
      * @param string $str
      * @return string
      */
-    static function int($str='') {
+    public static function int($str='') {
         if(!is_array($str)){
             preg_match('/-?[0-9]+/', $str, $tmp);
             if($tmp){
@@ -73,7 +73,7 @@ class Filter{
      * @param string $str
      * @return string
      */
-    static function intfloat($str='') {
+    public static function intfloat($str='') {
         preg_match('/-?[0-9]+(\.[0-9]+)?/', $str, $tmp);
         if($tmp){
             return $tmp[0];
@@ -86,7 +86,7 @@ class Filter{
      * @param bool $isline 是否需要下划线_ 与 横线-
      * @return string|string[]|null
      */
-    static function intabc($str=NULL, $isline=false){
+    public static function intabc($str=NULL, $isline=false){
         if($str !== NULL) {
             $reg = $isline ? '/[^a-z0-9_\-]/i' : '/[^a-z0-9]/i';
             $str = preg_replace($reg, '', $str);
@@ -99,7 +99,7 @@ class Filter{
      * @param null $str 需要过滤的字符
      * @return string|string[]|null
      */
-    static function abc($str=NULL){
+    public static function abc($str=NULL){
         if($str !== NULL) {
             $str = preg_replace('/[^a-z]/i', '', $str);
         }
@@ -111,7 +111,7 @@ class Filter{
      * @param string $str
      * @return string
      */
-    function text($str='', $len=0){
+    public static function text($str='', $len=0){
 
         if(is_array($str)){
             foreach($str as $k => $v){
@@ -135,7 +135,7 @@ class Filter{
      * @param string $str
      * @return string $str
      */
-    function date($str='', $t=''){
+    public static function date($str='', $t=''){
         $str = trim($str);
         if($t =='ymd'){
             if(preg_match('/^([0-9]{4})[-|年\/]([0-9]{1,2})[-|月\/]([0-9]{1,2})[日]?$/', $str)){

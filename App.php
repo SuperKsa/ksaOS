@@ -67,8 +67,10 @@ class APP extends Service{
                     $v = trim($v);
                     $setting = $setting[$v];
                 }
+                return $setting;
             }
-            return $setting;
+
+
         }else{
             DB('setting')->cache('setting_'.$key)->insert($key, $value);
             return $value;

@@ -19,7 +19,8 @@ class Pay{
     public static $TYPES = [
         'wechat' => '微信支付',
         'weapp' => '微信小程序',
-        'alipay' => '支付宝'
+        'alipay' => '支付宝',
+        'WechatAPP' => '微信APP支付'
     ];
 
     function Pay_getID($id){
@@ -150,7 +151,8 @@ class Pay{
                         $PayData['payCreateData'] = json_decode($PayData['payCreateData'], true);
                     }
                 }
-                if(!$PayData){
+
+                if(!$PayData) {
                     //添加待支付订单数据到DB
                     $PayData = [
                         'uid' => $uid,
@@ -168,53 +170,63 @@ class Pay{
                         'PayCode' => self::orderCode()
                     ];
                     $PayData['PayID'] = DB('pay_data')->insert($PayData, true);
+                }
+                //支付平台回调地址
+                $callbackUrl = $C['siteurl'].'pay/confirm/callback_wechat/';
 
-                    //支付平台回调地址
-                    $callbackUrl = $C['siteurl'].'pay/confirm/callback_wechat/';
-                    //微信 下单
-                    if($PayType == 'wechat' || $PayType == 'weapp'){
+                //微信统一下单
+                if($PayType == 'WechatAPP'){
+                    $WechatAPPSetting = APP::setting('WECHAT_APP_PAY');
+                    $payDt = WechatPay::UnifiedOrder($WechatAPPSetting['APPID'], $WechatAPPSetting['MCHID'], $Total, $Title, $PayData['PayCode'], $callbackUrl);
+                    //下单成功
+                    if($payDt['success']){
+                        $PayData['payCreateData'] = $payDt['createData'];
+                    }else{
+                        $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
+                    }
+                }elseif($PayType == 'wechat' || $PayType == 'weapp'){
 
-                        if($user['WXopenid']){
-                            $wechatSetting = $PayType == 'weapp' ? APP::setting('WEAPP') : APP::setting('WECHAT');
-                            $wechatPaySetting = APP::setting('WECHATPAY');
-                            $payDt = WechatPay::create_jsapi($wechatSetting['APPID'], $wechatPaySetting['MCHID'], [
-                                'description' => $Title,
-                                'out_trade_no' => $PayData['PayCode'],
-                                'notify_url' => $callbackUrl,
-                                'amount' => [
-                                    'total' => $Total,
-                                    'currency' => 'CNY'
-                                ],
-                                'payer' => [
-                                    'openid' => $user['WXopenid'],
-                                ],
-                                'scene_info' => [
-                                    'payer_client_ip' => Rest::ip(),
-                                ],
-                            ]);
+                    if($user['WXopenid']){
+                        $wechatSetting = $PayType == 'weapp' ? APP::setting('WEAPP') : APP::setting('WECHAT');
+                        $wechatPaySetting = APP::setting('WECHATPAY');
+                        $payDt = WechatPay::create_jsapi($wechatSetting['APPID'], $wechatPaySetting['MCHID'], [
+                            'description' => $Title,
+                            'out_trade_no' => $PayData['PayCode'],
+                            'notify_url' => $callbackUrl,
+                            'amount' => [
+                                'total' => $Total,
+                                'currency' => 'CNY'
+                            ],
+                            'payer' => [
+                                'openid' => $user['WXopenid'],
+                            ],
+                            'scene_info' => [
+                                'payer_client_ip' => Rest::ip(),
+                            ],
+                        ]);
 
-                            //下单成功
-                            if($payDt['success']){
-                                $PayData['payCreateData'] = $payDt['createData'];
-                            }else{
-                                $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
-                            }
-                        }else{
-                            $returnData['msg'] = '用户微信OpenID缺失';
-                        }
-
-                        //支付宝 下单
-                    }elseif($PayType =='alipay'){
-                        $payDt = Alipay::Pay_create($PayData['PayCode'], $Total, $Title, $callbackUrl);
                         //下单成功
-                        if($payDt && $payDt['success'] && $payDt['sign']){
+                        if($payDt['success']){
                             $PayData['payCreateData'] = $payDt['createData'];
                         }else{
                             $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
                         }
+                    }else{
+                        $returnData['msg'] = '用户微信OpenID缺失';
                     }
 
+                    //支付宝 下单
+                }elseif($PayType =='alipay'){
+                    $payDt = Alipay::Pay_create($PayData['PayCode'], $Total, $Title, $callbackUrl);
+                    //下单成功
+                    if($payDt && $payDt['success'] && $payDt['sign']){
+                        $PayData['payCreateData'] = $payDt['createData'];
+                    }else{
+                        $returnData['msg'] = 'PayMsg: '.$payDt['msg'];
+                    }
                 }
+
+
 
                 if($PayData['payCreateData'] && $PayData['Status'] === 0){
                     DB('pay_data')->where('PayID', $PayData['PayID'])->update([

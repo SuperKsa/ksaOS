@@ -10,6 +10,7 @@
 
 namespace ksaOS;
 
+use http\Url;
 use function Sodium\crypto_aead_aes256gcm_decrypt;
 
 if(!defined('KSAOS')) {
@@ -24,6 +25,9 @@ class WechatPay {
     private static  $WECHAT_API = 'https://api.mch.weixin.qq.com';
     //jsapi支付接口地址
     private static $WECHAT_API_JSAPI = '/v3/pay/transactions/jsapi';
+    //APP支付接口地址
+    private static $WECHAT_API_APP = '/v3/pay/transactions/app';
+
     //微信支付查询订单接口地址
     private static $WECHAT_API_QUERY= '/v3/pay/transactions/id/';
     //微信支付退款订单接口地址
@@ -48,9 +52,9 @@ class WechatPay {
         ];
         $post = array_merges($post, $option);
         $post = json_encode($post);
-
+        $paysetting = APP::setting('WECHATPAY');
         $api = self::$WECHAT_API_JSAPI;
-        $sign = self::authorizationV3('POST', $api, $post);
+        $sign = self::authorizationV3('POST', $api, $post, $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, $post, [
             'User-Agent' => USERAGENT,
             'Content-Type' => 'application/json',
@@ -163,13 +167,17 @@ class WechatPay {
 
     /**
      * 微信支付 V3授权生成
-     * @param string $method 请求方式 POST GET PUT
-     * @param string $api 请求API地址
-     * @param string $post 请求body数据
-     * @return array [sign=签名, Authorization=授权字串]
+     * @param $method string 请求方式 POST GET PUT
+     * @param $api Url 请求API地址
+     * @param $post string 请求body数据
+     * @param $MCHID string 商户ID
+     * @param $SERIALNO string 证书序列号
+     * @param $certificate string 证书公钥内容内容
+     * @param $privateKey string 证书私钥内容
+     *
+     * @return array
      */
-    static function authorizationV3($method='', $api ='', $post=NULL){
-        $paysetting = APP::setting('WECHATPAY');
+    static function authorizationV3($method='', $api ='', $post=NULL, $MCHID = '', $SERIALNO='', $certificate='', $privateKey=''){
         $time = time();
         $nonce_str = rands(10);
         $sign = self::siginV3([
@@ -178,10 +186,15 @@ class WechatPay {
             $time,
             $nonce_str,
             $post,
-        ]);
+        ], $certificate, $privateKey);
         return [
+            'method' => $method,
+            'api' => $api,
+            'post' => $post,
             'sign' => $sign,
-            'Authorization' => 'WECHATPAY2-SHA256-RSA2048 '.sprintf('mchid="%s",nonce_str="%s",timestamp="%d",serial_no="%s",signature="%s"', $paysetting['MCHID'], $nonce_str, $time, $paysetting['SERIALNO'], $sign)
+            'nonce_str' => $nonce_str,
+            'time' => $time,
+            'Authorization' => 'WECHATPAY2-SHA256-RSA2048 '.sprintf('mchid="%s",nonce_str="%s",timestamp="%d",serial_no="%s",signature="%s"', $MCHID, $nonce_str, $time, $SERIALNO, $sign)
         ];
     }
 
@@ -198,11 +211,8 @@ class WechatPay {
             $message .= $value."\n";
         }
 
-        $paysetting = APP::setting('WECHATPAY');
-        $certificate = $certificate ? $certificate : $paysetting['CERTIFICATE'];
-        $privateKey = $privateKey ? $privateKey : $paysetting['PRIVATEKEY'];
         $sigin = '';
-        if($privateKey){
+        if($privateKey && $certificate){
             openssl_sign($message, $certificate, $privateKey, 'sha256WithRSAEncryption');
             $sigin = base64_encode($certificate);
         }
@@ -245,7 +255,7 @@ class WechatPay {
         $paysetting = APP::setting('WECHATPAY');
         $cacheKey = 'WechatPaycertificates_'.$paysetting['MCHID'];
         if(!($data = Cache($cacheKey))){
-            $Authorization = self::authorizationV3('GET', self::$CERTIFICATES_API);
+            $Authorization = self::authorizationV3('GET', self::$CERTIFICATES_API,'', $paysetting['MCHID'], $paysetting['SERIALNO']);
 
             $data = Curls::send(self::$WECHAT_API.self::$CERTIFICATES_API, '',  [
                 'Authorization' => $Authorization['Authorization'],
@@ -265,70 +275,131 @@ class WechatPay {
         return $data;
     }
 
+
     /**
-     * 微信API下单函数
-     * 即将废弃 2021年1月28日 00:54:04
+     * APP下单
+     * @param $appid
+     * @param $mchid
+     * @param $total
+     * @param $desc
+     * @param $out_trade_no
+     * @param $notify_url
+     * @param $option
+     *
+     * @return array
+     */
+    static function Create_APP_Orders($appid='', $mchid='', $total=0, $desc='', $out_trade_no='', $notify_url='', $option=[]){
+
+        $payData = [
+            'appid' => $appid,
+            'mchid' => $mchid,
+            'description' => $desc,
+            'out_trade_no' => $out_trade_no,
+            'amount' => [
+                'total' => $total,
+                'currency' => 'CNY'
+            ],
+            'notify_url' => $notify_url
+        ];
+
+
+        $post = array_merges($payData, $option);
+        $post = json_encode($post);
+        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $api = self::$WECHAT_API_APP;
+        $sign = self::authorizationV3('POST', $api, $post, $paysetting['MCHID'], $paysetting['SERIALNO'], $paysetting['CERTIFICATE'], $paysetting['PRIVATEKEY']);
+        $send = Curls::send(self::$WECHAT_API.$api, $post, [
+            'User-Agent' => USERAGENT,
+            'Content-Type' => 'application/json',
+            'Authorization' => $sign['Authorization']
+        ]);
+        if($send && $send['data']){
+            $send['data'] = json_decode($send['data'], true);
+        }
+
+        $return = [
+            'success' => 0,
+            'errorcode' => '',
+            'msg'  => '',
+            'createData' => [ //建单数据
+              'option' => $option,
+              'sign' => $sign,
+              'prepay_id' => ''
+            ]
+        ];
+        if($send['httpcode'] == 200 && $send['data']['prepay_id']){
+            $return['success'] = 1;
+            $return['createData']['prepay_id'] = $send['data']['prepay_id'];
+
+        }else if($send['httpcode'] > 0){
+            $return['errorcode'] = $send['data']['code'];
+            $return['msg'] = $send['data']['message'];
+        }
+        return $return;
+    }
+
+
+    /**
+     * 微信支付API 统一下单函数
      *
      * 参考资料：https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
-     * @param string $userOpenid 用户openID
-     * @param string $PayCode 系统内部订单编号
-     * @param string $str
+     *
      */
-    static function _Pay_create($userOpenid, $PayCode='', $total=0, $strbody='', $callbackUrl=''){
+    static function UnifiedOrder($appid='', $mchid='', $total=0, $desc='', $out_trade_no='', $notify_url='', $option=[], $trade_type='APP'){
         $APIURL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
         //回调地址
         $nonce_str = rands(10);
+        $time = time();
         $total = floatval($total);
-        $total = $total > 0 ? floor($total * 100) : 0; //付款金额以分为单位的整数 向下舍掉分后面的值
-
+        $total = $total > 0 ? $total : 0; //付款金额以分为单位的整数 向下舍掉分后面的值
 
         $returnData = [
             'success' => 0,
-            'msg' => '创建支付中',
-            'sign' => '',
-            'PayUrl' => '', //支付地址
+            'errorcode' => '',
+            'msg'  => '',
+            'createData' => [ //建单数据
+              'option' => $option,
+              'sign' => [
+                  'nonce_str' => $nonce_str,
+                  'time' => $time,
+                  'sign' => '',
+              ],
+              'prepay_id' => ''
+            ]
         ];
 
-        if($PayCode && $total >0){
-            $strbody = mb_substr($strbody,0,120); //body不能超过120个字符
+        if($appid && $mchid && $total){
             $post = [
-                'body' => $strbody, //商品简单描述 100字内
+                'appid' => $appid,
+                'mch_id' => $mchid,
+                'body' => mb_substr($desc,0,120), //商品简单描述 不能超过120个字符
                 'total_fee' => $total,//支付金额
                 'sign_type' => 'MD5',
                 'nonce_str' => $nonce_str,
-                'out_trade_no' => $PayCode,
+                'out_trade_no' => $out_trade_no,
                 'spbill_create_ip' => Rest::ip(),
-                'notify_url' => $callbackUrl,
-                'trade_type' => Wechat::isWechat() ? 'JSAPI' : 'MWEB', //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
+                'notify_url' => $notify_url,
+                'trade_type' => $trade_type, //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
             ];
+            $paysetting = APP::setting('WECHAT_APP_PAY');
+            $post['sign'] = self::sign($post, $paysetting['APIKEY']);
 
-            if($userOpenid){
-                $post['openid'] = $userOpenid;
-            }
-            $post = self::pay_sign($post);
-
-            $returnData['sign'] = $post['sign'];
+            $returnData['createData']['sign']['sign'] = $post['sign'];
             $post = $post ? self::pay_Arr2Xml($post) : '';
+
+
             $data = Curls::send($APIURL, $post);
 
             $data = $data['data'];
             if($data){
                 $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
                 $data = json_decode(json_encode($data),true);
-                if(strtolower($data['return_code']) == 'success' && $data['appid'] && $data['mch_id'] && ($data['mweb_url'] || $data['prepay_id']) && $data['sign']){
+
+                if(strtolower($data['return_code']) == 'success' && $data['appid'] && $data['mch_id'] && $data['prepay_id'] && $data['sign']){
                     $returnData = array_merge($data,$returnData);
                     $returnData['success'] = 1;
-                    $returnData['PayUrl'] = $data['mweb_url'];
-
-                    //以下字段在return_code 和result_code都为SUCCESS的时候有返回
-                    //交易类型 SAPI=JSAPI支付 NATIVE=Native支付 APP=APP支付
-                    $returnData['trade_type'] = $data['trade_type']; //JSAPI
-
                     //预支付交易会话标识 微信生成的预支付会话标识，用于后续接口调用中使用，该值有效期为2小时
-                    $returnData['prepay_id'] = $data['prepay_id']; //wx201410272009395522657a690389285100
-
-                    //trade_type=NATIVE时有返回，此url用于生成支付二维码，然后提供给用户进行扫码支付。
-                    $returnData['code_url'] = $data['code_url']; //weixin://wxpay/bizpayurl/up?pr=NwY5Mz9&groupid=00
+                    $returnData['createData']['prepay_id'] = $data['prepay_id']; //wx201410272009395522657a690389285100
 
                 }
                 if($data['err_code_des']){
@@ -338,7 +409,11 @@ class WechatPay {
                 }
             }
         }
+
+
         $returnData['msg'] = stripTags($returnData['msg'], 30);
+
+
         return $returnData;
     }
 
@@ -352,7 +427,7 @@ class WechatPay {
     public static function query($PayCode='', $transaction_id =''){
         $paysetting = APP::setting('WECHATPAY');
         $api = self::$WECHAT_API_QUERY.$transaction_id.'?mchid='.$paysetting['MCHID'];
-        $sign = self::authorizationV3('GET', $api);
+        $sign = self::authorizationV3('GET', $api, '', $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, '', [
             'User-Agent' => Rest::useragent(),
             'Content-Type' => 'application/json',
@@ -379,22 +454,6 @@ class WechatPay {
         return $returnData;
     }
 
-    /**
-     * 支付参数签名并输出签名后的POST XML数据
-     * 不需要传入商户KEY、商户ID、公众号APPID
-     * @param array $post
-     * @return array
-     */
-    static function pay_sign($post=[]){
-        if($post){
-            $setting = APP::setting('WECHAT');
-            $settingPay = APP::setting('WECHATPAY');
-            $post['appid'] = $setting['APPID'];
-            $post['mch_id'] = $settingPay['MCHID'];
-            $post['sign'] = self::sign($post, true);
-        }
-        return $post;
-    }
 
     /**
      * 微信Sign生成
@@ -402,13 +461,12 @@ class WechatPay {
      * @param bool $isPay 生成商家支付Sign
      * @return array|bool|string
      */
-    static function sign($signArr=[], $isPay=false){
+    static function sign($signArr=[], $APIKEY=''){
         $sign = false;
         if($signArr){
             ksort($signArr);
-            if($isPay){
-                $settingPay = APP::setting('WECHATPAY');
-                $signArr['key'] = stripTags($settingPay['APIKEY'],32);
+            if($APIKEY){
+                $signArr['key'] = stripTags($APIKEY,100);
             }
             $sign = [];
             foreach($signArr as $key => $value){
