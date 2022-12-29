@@ -109,5 +109,31 @@ class Upload {
 		APP::hook(__CLASS__ , __FUNCTION__);
 		return $return;
 	}
+
+    /**
+     * 保存base64图片
+     * @param $fileName string 文件名 不包含后缀
+     * @param $Mod string 模块名
+     * @param $base64Str string base64原文
+     * @return false|string 返回图片地址（不包含模块名）
+     */
+    public static function SaveBase64($fileName='', $Mod='', $base64Str=''){
+        //匹配出图片的格式
+        if (preg_match('/^(data:\s*image\/(\w+);base64,)/', $base64Str, $result)){
+            $saveDir = ROOT.'data/attach/'.$Mod.'/';
+            //检查是否有该文件夹，如果没有就创建，并给予最高权限
+            !is_dir($saveDir) && mkdir($saveDir, 0700);
+            //组合文件路径
+            $file = $fileName.'.'.$result[2];
+            $savePath = $saveDir.$file;
+            //保存图片
+            if (file_put_contents($savePath, base64_decode(str_replace($result[1], '', $base64Str)))){
+                //返回图片地址路径
+                return $file;
+            }
+
+        }
+        return false;
+    }
 	
 }
