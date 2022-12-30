@@ -68,12 +68,12 @@ class Upload {
 			$this->FILE['ext'] = APP::File()->ext($file['name']);
 			$this->FILE['name'] = $newName.'.'.$this->FILE['ext'];
 			//目录结构：/年月/日/时/文件名前两位/
-			$this->FILE['dir'] = '/'.(date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($newName, 0,2).'/';
-			$this->FILE['path'] = $this->FILE['dir'].$this->FILE['name'];
-			$saveDir = ROOT.'data/attach/'.$Mod.'/'.$this->FILE['dir'];
-			$this->FilePath = $saveDir.$this->FILE['name'];
-			
-			
+			$this->FILE['dir'] = (date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($newName, 0,2);
+			$this->FILE['path'] = $this->FILE['dir'].'/'.$this->FILE['name'];
+			$saveDir = ATTACHDIR.$Mod.'/'.$this->FILE['dir'];
+   
+			$this->FilePath = $saveDir.'/'.$this->FILE['name'];
+   
 			$picInfo = APP::File()->picInfo($this->TmpPath);
 			$this->FILE['isPic'] = $picInfo['width'] ? 1 : 0;
 			$this->FILE['picWidth'] = $picInfo['width'];
@@ -120,7 +120,7 @@ class Upload {
     public static function SaveBase64($fileName='', $Mod='', $base64Str=''){
         //匹配出图片的格式
         if (preg_match('/^(data:\s*image\/(\w+);base64,)/', $base64Str, $result)){
-            $saveDir = ROOT.'data/attach/'.$Mod.'/';
+            $saveDir = ATTACHDIR.$Mod.'/';
             //检查是否有该文件夹，如果没有就创建，并给予最高权限
             !is_dir($saveDir) && mkdir($saveDir, 0700);
             //组合文件路径

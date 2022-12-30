@@ -116,8 +116,8 @@ class Attach{
 		if($idtype && $aid >0){
 			$data = self::tmpData($aid, $uid);
 			if($data){
-				$tempFile = ROOT.self::Path('temp', $data['src']);
-				$newFile = ROOT.self::Path($idtype, $data['src']);
+				$tempFile = self::Path('temp', $data['src']);
+				$newFile = self::Path($idtype, $data['src']);
 				Files::mkdir(dirname($newFile));
 				if(copy($tempFile, $newFile)){
 					$tableID = self::tableID($idtype, $id);
@@ -209,10 +209,11 @@ class Attach{
 			if($isSyn){
 
 			//删除本地附件
-			}elseif(is_file(ROOT.$path)){
-				return @unlink(ROOT.$path);
+			}elseif(is_file($path)){
+				return @unlink($path);
 			}
 		}
+        return false;
 	}
 	
 	/**
@@ -222,10 +223,14 @@ class Attach{
 	 * @return string
 	 */
 	public static function Path($md='',$file=''){
-		$md = self::idtype($md);
+		$md = trim($md);
+        $md = ltrim($md, '/');
+        $file = trim($file);
+        $file = ltrim($file, '/');
 		if($md && $file){
-            return 'data/attach/'.$md.'/'.$file;
+            return ATTACHDIR.$md.'/'.$file;
 		}
+        return '';
 	}
 
 	/**
@@ -235,13 +240,13 @@ class Attach{
 	 * @return string
 	 */
 	public static function Url($md='',$file=''){
-		global $C;
 		$md = self::idtype($md);
 		if($md && $file){
-		    if(cstrpos($file,['http://', 'https://','data/attach/'])){
+		    if(cstrpos($file,['http://', 'https://'])){
 		        return $file;
             }
-			return $C['picurl'].self::Path($md, $file);
+            $file = ltrim($file, '/');
+			return ATTACHURL.$md.'/'.$file;
 		}
 		return '';
 	}

@@ -28,6 +28,8 @@ class Service{
 	protected $_DB;
 	private $config = [];
 	private $__Init = 0;
+    
+    private $_AttachDefDir = 'data/attach/'; //附件默认访问目录
 	
 	function __construct(){
 		
@@ -160,7 +162,9 @@ class Service{
 		define('COOKIEDOMAIN', $this->config['cookie']['domain']);
 		//加密函数混淆密钥
 		define('ENCODEKEY', $this->config['CodeKEY']);
-		
+        //附件保存目录
+        define('ATTACHDIR', $this->config['attachDir'] ? $this->config['attachDir'] : ROOT.$this->_AttachDefDir);
+        
 		$this->hook(__CLASS__ , __FUNCTION__);
 		return $this;
 	}
@@ -264,10 +268,17 @@ class Service{
 			$C['staticUrl'] = $siteurl;
 		}
 		unset($siteurl,$host);
-		
+        //如果附件没有定义访问地址 则为默认
+        if(!$C['picurl']){
+            $C['picurl'] = $this->_AttachDefDir;
+        }
+        
 		if(!(strpos($C['picurl'],'http') ===0)){
 			$C['picurl'] = $C['siteurl'].$C['picurl'];
 		}
+        //常量定义 附件访问地址
+        define('ATTACHURL', $C['picurl']);
+        
 		$C['sid']  = cookies('sid');
 		$this->var = $C;
 		unset($C['config']['db'], $C['config']['memory']);//全局变量删除数据库配置信息
