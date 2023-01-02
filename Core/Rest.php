@@ -330,10 +330,23 @@ class Rest{
      * @return array
      */
     static function orgData($M=NULL){
-        $M = strtoupper($M);
-        if($M === NULL || !in_array($M,['GET'])){
-            parse_str(file_get_contents('php://input'), $inputdata);
+        if($M !== null){
+            $M = strtoupper($M);
         }
+        
+        if($M === NULL || !in_array($M,['GET'])){
+            $input = file_get_contents('php://input');
+            try{
+                $inputdata = json_decode($input, true);
+            }catch (\Exception $e){
+                try{
+                    parse_str($input, $inputdata);
+                }catch (\Exception $e2){
+                
+                }
+            }
+        }
+        
         $inputdata = (array)$inputdata;
 
         switch ($M){
@@ -378,10 +391,10 @@ class Rest{
                 $data = $_GET;
                 break;
         }
-
         if($M === NULL){
             $data = array_merges($data, self::orgData('FILES'));
             $data = array_merges($data, $inputdata);
+            
         }
         return (array)$data;
     }
