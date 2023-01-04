@@ -58,7 +58,7 @@ class Route{
 			return ROUTE_INIT___;
 		}
 		define('ROUTE_INIT___', true);
-		
+
 
 
 		$loadFile = 0;
