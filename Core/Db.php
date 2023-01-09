@@ -18,7 +18,7 @@ if(!defined('KSAOS')) {
 /**
  * 数据库操作
  * @param String 传入表名(不带前缀)
- * @return \class 返回对象
+ * @return DB 返回对象
  * DB('setting')->get();
  */
 function DB($table , $as=''){
@@ -90,10 +90,10 @@ class DB{
 	/**
 	 * 构造器 初始化数据表 所有用到的数据表必须使用此函数，否则无法执行分布式部署
 	 * 联合查询例子：DB('user','a')->table('user_mobile','b','b.uid=a.uid','LEFT')->table('user_sms','c',['c.uid=a.uid','c.uid=b.uid'],'LEFT')->where(['a.uid'=>1])
-	 * @param type $table 表名 （不带前缀）
-	 * @param type $as 联合查询 AS别名
-	 * @param type $on 联合查询 ON条件 (支持单个和数组模式：a.field=b.field 或 ['a.field=b.field', 'c.field=b.field'])
-	 * @param type $join 联合查询 联合方式（LEFT RIGHT INNER FULL）
+	 * @param string $table 表名 （不带前缀）
+	 * @param string $as 联合查询 AS别名
+	 * @param string $on 联合查询 ON条件 (支持单个和数组模式：a.field=b.field 或 ['a.field=b.field', 'c.field=b.field'])
+	 * @param string $join 联合查询 联合方式（LEFT RIGHT INNER FULL）
 	 * @return $this
 	 */
 	public function table($table, $as='', $on='', $join=''){
@@ -493,8 +493,8 @@ class DB{
 
 	/**
 	 * SQL查询 返回所有查询到的数据
-	 * @param type $keyfield 返回的数据键名字段名（默认为空 自然排序0-9）
-	 * @param type $silent 静默模式 false=否 true=是 默认为false
+	 * @param string $keyfield 返回的数据键名字段名（默认为空 自然排序0-9）
+	 * @param bool $silent 静默模式 false=否 true=是 默认为false
 	 * @return array
 	 */
 	public function fetch_all($keyfield = '', $silent=false) {
@@ -525,7 +525,7 @@ class DB{
 	
 	/**
 	 * SQL查询 只返回第一条记录
-	 * @param type $silent 是否为静默查询 默认false=否
+	 * @param bool $silent 是否为静默查询 默认false=否
 	 * @return array
 	 */
 	public function fetch_first($silent=false){
@@ -550,8 +550,8 @@ class DB{
 	
 	/**
 	 * SQL查询 统计符合sql的数量(等同于mysql_free_result)
-	 * @param type $silent 静默模式 false=否 true=是 默认为false
-	 * @return number
+	 * @param bool $silent 静默模式 false=否 true=是 默认为false
+	 * @return bool|number
 	 */
 	public function fetch_count($silent = false) {
 		if(!$this->table){
@@ -660,8 +660,8 @@ class DB{
 	/**
 	 * DB操作 - 更新数据 update
 	 * 必须存在where()
-	 * @param type $data 需要更新的数据数组，key=字段名 value=记录值
-	 * @param type $step 数值累加减模式（阅读量等操作 默认false，开启后$data数据结构：['key'=>+1 , 'key2'=>-1]）
+	 * @param array $data 需要更新的数据数组，key=字段名 value=记录值
+	 * @param bool $step 数值累加减模式（阅读量等操作 默认false，开启后$data数据结构：['key'=>+1 , 'key2'=>-1]）
 	 * @return boolean
 	 */
 	public function update($data=[], $step = false) {
@@ -702,10 +702,10 @@ class DB{
 	
 	/**
 	 * SQL查询 核心函数
-	 * @param type $sql 要执行的sql
-	 * @param type $silent 静默模式，不返回错误 
-	 * @param type $unbuffered 是否取缓存数据 (true=是 false=否默认false）
-	 * @return type
+	 * @param string $sql 要执行的sql
+	 * @param bool $silent 静默模式，不返回错误
+	 * @param bool $unbuffered 是否取缓存数据 (true=是 false=否默认false）
+	 * @return array|bool|null
 	 */
 	public function __query($sql='', $silent = false, $unbuffered = false) {
 		
@@ -780,10 +780,10 @@ class DB{
 
 	/**
 	 * 内部函数 where 字段二次格式化处理 统一格式化为 `a` = 'xx'
-	 * @param type $field 字段名
-	 * @param type $val 值 （支持数组 function）
-	 * @param type $glue 运算符 (支持 = - + | & ^ >  < <> <= >= != null like likes in  notin)
-	 * @return type
+	 * @param string $field 字段名
+	 * @param string|array|callable|int $val 值 （支持数组 function）
+	 * @param string $glue 运算符 (支持 = - + | & ^ >  < <> <= >= != null like likes in  notin)
+	 * @return string
 	 * @throws DbException
 	 */
 	public function __field($field='', $val='', $glue = '=') {
@@ -876,7 +876,7 @@ class DB{
 	
 	/**
 	 * 内部函数 字段名统一增加引号`
-	 * @param type $field
+	 * @param string $field
 	 * @return string
 	 */
 	public static function __fieldQ($field=[]) {
@@ -917,9 +917,9 @@ class DB{
 	
 	/**
 	 * 内部函数 缓存读写操作
-	 * @param type $type 操作类型 get=读取 set=写入更新 del=删除
-	 * @param type $cacheData 缓存数据
-	 * @return type
+	 * @param string $type 操作类型 get=读取 set=写入更新 del=删除
+	 * @param string|array|int $cacheData 缓存数据
+	 * @return string|array|int
 	 */
 	private function __cache($type='get', $cacheData=''){
 		if(!$this->__isCache){
