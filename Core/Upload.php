@@ -121,7 +121,7 @@ class Upload {
     private static function get_attach_dir($Mod='', $fileName=''){
         
         //目录结构：/年月/日/时/文件名前两位/
-        $saveDir = (date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($fileName, 0,2);
+        $saveDir = date('Y').'/'.date('m').'/'.date('d').'/'.date('H').'/'. substr($fileName, 0,2);
         Files::mkdir(ATTACHDIR.$Mod.'/'.$saveDir);
         return $saveDir;
     }
