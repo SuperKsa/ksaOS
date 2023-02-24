@@ -660,7 +660,7 @@ class DB{
 	/**
 	 * DB操作 - 更新数据 update
 	 * 必须存在where()
-	 * @param array $data 需要更新的数据数组，key=字段名 value=记录值
+	 * @param array $data 需要更新的数据数组，key=字段名 value=记录值(字段名前带@则值=原始值)
 	 * @param bool $step 数值累加减模式（阅读量等操作 默认false，开启后$data数据结构：['key'=>+1 , 'key2'=>-1]）
 	 * @return boolean
 	 */
@@ -671,6 +671,12 @@ class DB{
 		$sql = $this->sql('update');
 
 		foreach($data as $key => $val){
+            //如果字段名前带@ 则 值=原始值
+            if(substr($key, 0, 1) == '@'){
+                $data[$key] = '`'.substr($key, 1).'`='.$val;
+                continue;
+            }
+            
             $thsStep = $step;
 			$s = '=';
 			if($step){
@@ -689,6 +695,7 @@ class DB{
 			//送到修饰符处理步骤 进一步对val进行严格处理
             list($field, $val, $tp) = $this->__modify($key, $val,1);
             $val = $thsStep ? $val : (is_null($val) ? 'NULL' : '\''.$val.'\'');
+            
 			$data[$key] = '`'.$field.'`'.$s.$val;
 		}
 		$set = implode(' , ',$data);

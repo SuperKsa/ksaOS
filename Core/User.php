@@ -118,6 +118,9 @@ class User{
                 }
             }else{
                 $PWstatus = self::checkPassword($user, $password);
+                if(!$PWstatus){
+                    $PWstatus = $user && $user['mobile'] == $account && $user['password'] == $password;
+                }
             }
 
 			if($PWstatus){
