@@ -216,4 +216,20 @@ class Files{
 			return NULL;
 		}
 	}
+    
+    /**
+     * 获取文件总行数
+     * @param $file
+     *
+     * @return int
+     */
+    public static function getFileLineMax($file){
+        $getfp = fopen($file, 'r');
+        $lines = 0;
+        while (fgets($getfp)) {
+            $lines ++;
+        }
+        fclose($getfp);
+        return $lines;
+    }
 }
