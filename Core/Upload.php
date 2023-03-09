@@ -56,14 +56,15 @@ class Upload {
 			$newName = md5(microtime(true).$file['tmp_name']);
 			$this->FILE = [
 				'fileName' => APP::File()->name($file['name']),
-				'path' => '',
+				'path' => '', //相对路径 基于 $Mod
 				'name' => '',
 				'dir' => '',
 				'ext' => '',
 				'size' => $file['size'],
 				'isPic' => 0,
 				'picWidth' => 0,
-				'picHeight' => 0
+				'picHeight' => 0,
+                'target' => '', //绝对路径
 			];
 			$this->FILE['ext'] = APP::File()->ext($file['name']);
 			$this->FILE['name'] = $newName.'.'.$this->FILE['ext'];
@@ -74,6 +75,7 @@ class Upload {
 			$saveDir = ATTACHDIR.$Mod.'/'.$this->FILE['dir'];
    
 			$this->FilePath = $saveDir.'/'.$this->FILE['name'];
+            $this->FILE['target'] = $this->FilePath;
    
 			$picInfo = APP::File()->picInfo($this->TmpPath);
 			$this->FILE['isPic'] = $picInfo['width'] ? 1 : 0;
