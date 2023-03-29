@@ -590,6 +590,26 @@ function loopFieldValue($data=[],$keys=[]){
 }
 
 /**
+ * 提取一个数组中的键值对
+ * 用法：
+ *      $uids = ArrayFieldValue($list, 'uid', 'name');
+ *
+ * @param array $data 循环列表数据
+ * @param string $keys key对应的字段名
+ * @param string $valueKey value对应的字段名
+ * @return array 根据$keys参数 顺序返回
+ */
+function ArrayFieldValue($data=[], $key='', $valueKey=''){
+    $dt = [];
+    foreach($data as $value){
+        if(isset($value[$key]) && isset($value[$valueKey])){
+            $dt[$value[$key]] = $value[$valueKey];
+        }
+    }
+    return $dt;
+}
+
+/**
  * 递归合并多维
  * @param array $a
  * @param array $b

@@ -26,6 +26,142 @@ class Image{
 	function __construct() {
 		$this->Imagick = extension_loaded('imagick') ? true : false;
 	}
+    
+    /**
+     * 给图片添加水印
+     *
+     * @param $source string 原图路径
+     * @param $toPath string 保存路径
+     * @param $watermark string 水印png路径
+     * @param $pos       int 水印位置 按下面的数字对应位置
+     *                   7 8 9
+     *                   4 5 6
+     *                   1 2 3
+     * @param int $transparency 设置水印透明度，范围0-100
+     *
+     * @return bool|string
+     */
+    public static function Watermark_Img($source='', $savePath='', $watermark='', $pos=3, $transparency = 40){
+        if(!$source || !is_file($source)){
+            return false;
+        }
+        // 加载水印和照片
+        $stamp = imagecreatefrompng($watermark);
+        $extension = substr($source, strrpos($source, '.') + 1);
+        if ($extension == 'jpg') {
+            $im = imagecreatefromjpeg($source);
+        } else if ($extension == 'png') {
+            $im = imagecreatefrompng($source);
+        } else if ($extension == 'gif') {
+            $im = imagecreatefromgif($source);
+        } else {
+            return false;
+        }
+        
+        // 设置水印的边距并获取水印图像的高度/宽度
+        $marge_right = 10; // 设置水印右边距
+        $marge_bottom = 10; // 设置水印底边距
+        $sx = imagesx($stamp); // 获取水印图像的宽度
+        $sy = imagesy($stamp); // 获取水印图像的高度
+        
+        // 将水印图像复制到我们的照片上，使用边距偏移和照片宽度来计算水印的位置。
+        switch ($pos) {
+            case 1:
+                $x = $marge_right;
+                $y = imagesy($im) - $sy - $marge_bottom;
+                break;
+            case 2:
+                $x = (imagesx($im) - $sx) / 2;
+                $y = imagesy($im) - $sy - $marge_bottom;
+                break;
+            case 3:
+                $x = imagesx($im) - $sx - $marge_right;
+                $y = imagesy($im) - $sy - $marge_bottom;
+                break;
+            case 4:
+                $x = $marge_right;
+                $y = (imagesy($im) - $sy) / 2;
+                break;
+            case 5:
+                $x = (imagesx($im) - $sx) / 2;
+                $y = (imagesy($im) - $sy) / 2;
+                break;
+            case 6:
+                $x = imagesx($im) - $sx - $marge_right;
+                $y = (imagesy($im) - $sy) / 2;
+                break;
+            case 7:
+                $x = $marge_right;
+                $y = $marge_bottom;
+                break;
+            case 8:
+                $x = (imagesx($im) - $sx) / 2;
+                $y = $marge_bottom;
+                break;
+            case 9:
+                $x = imagesx($im) - $sx - $marge_right;
+                $y = $marge_bottom;
+                break;
+            default:
+                return false;
+        }
+        //透明度合并水印和图像
+        imagecopymerge($im, $stamp, $x, $y, 0, 0, imagesx($stamp), imagesy($stamp), $transparency);
+        
+        $isSave = self::IM_saveImg($im, $savePath);
+        imagedestroy($im); // 释放内存
+        imagedestroy($stamp); // 释放内存
+        return $isSave ? $savePath : false;
+    }
+    
+    /**
+     * 根据路径在浏览器中输出图片
+     * @param $source
+     *
+     * @return false|void
+     */
+    public static function Show($source){
+        $extension = substr($source, strrpos($source, '.') + 1);
+        if ($extension == 'jpg') {
+            $im = imagecreatefromjpeg($source);
+        } else if ($extension == 'png') {
+            $im = imagecreatefrompng($source);
+        } else if ($extension == 'gif') {
+            $im = imagecreatefromgif($source);
+        } else {
+            return false;
+        }
+        /** http请求响应类型设置为 image/png 以便直接显示为图片 */
+        header('Content-Type:image/'.$extension);
+        imagepng($im);//输入图片到浏览器或者文件
+        imagedestroy($im); // 释放内存
+    }
+    
+    /**
+     * IM保存图片
+     * @param $im
+     * @param $savePath
+     *
+     * @return false|void
+     */
+    public static function IM_saveImg($im, $savePath){
+        // 保存图片并释放内存
+        $extension = pathinfo($savePath, PATHINFO_EXTENSION);
+        switch ($extension) {
+            case 'jpg':
+                return imagejpeg($im, $savePath, 100);
+            case 'jpeg':
+                return imagejpeg($im, $savePath, 100);
+            case 'png':
+                return imagepng($im, $savePath, 9);
+            case 'gif':
+                return imagegif($im, $savePath);
+            default:
+                return false;
+        }
+    }
+
+
 
 	/**
 	 * 缩略图与裁切
@@ -66,7 +202,7 @@ class Image{
 	}
 
 	private function _IM(){
-		list($Tratio, $ratio, $ThumbW, $ThumbH, $domW, $domH) = $this->SizeVal();
+		[$Tratio, $ratio, $ThumbW, $ThumbH, $domW, $domH] = $this->SizeVal();
 
 		$im = new Imagick();
 		$im->readImage(realpath($this->source)); //读取源图
@@ -94,7 +230,7 @@ class Image{
 
 
 	private function _GD(){
-		list($Tratio, $ratio, $ThumbW, $ThumbH, $domW, $domH) = $this->SizeVal();
+		[$Tratio, $ratio, $ThumbW, $ThumbH, $domW, $domH] = $this->SizeVal();
 
 		if($ratio >= $Tratio) {
 			$this->thumbDom = imagecreatetruecolor($this->Thumb_width,($this->Thumb_width)/$ratio);
