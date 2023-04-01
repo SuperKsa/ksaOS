@@ -104,7 +104,7 @@ class Service{
 		$this->debug()->start('Core');
 		
 		
-		$this->_FunctionCore()->_setDefine()->_RAM()->__Db()->__Event()->__Setting()->__user()->__End();	
+		$this->_FunctionCore()->_setDefine()->_RAM()->__Db()->__Event()->__Setting()->__user()->__End();
 		return $this;
 	}
 	/**
@@ -280,12 +280,15 @@ class Service{
 	
 	private function __setting() {
 		global $C;
-		$setting = DB('setting')->where('skey', 'system')->fetch_first();
-		if(isset($setting['CDN_url']) && $setting['CDN_url']){
-			$C['staticUrl'] = $setting['CDN_url'];
-		}
-		$C['setting'] = $setting;
-		$C['TITLE'] = isset($setting['sitename']) ? $setting['sitename'] : '';
+        if(defined('PURE_MODE')) {
+            return $this;
+        }
+        $setting = DB('setting')->where('skey', 'system')->fetch_first();
+        if (isset($setting['CDN_url']) && $setting['CDN_url']) {
+            $C['staticUrl'] = $setting['CDN_url'];
+        }
+        $C['setting'] = $setting;
+        $C['TITLE'] = isset($setting['sitename']) ? $setting['sitename'] : '';
 		return $this;
 	}
 
@@ -295,7 +298,7 @@ class Service{
      */
 	private function __user() {
 		//如果是worker类框架 则直接略过用户识别
-		if(defined('__BIGER__')){
+		if(defined('__BIGER__') || defined('PURE_MODE')){
 			return $this;
 		}
 		global $C;
