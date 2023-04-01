@@ -116,7 +116,7 @@ class Weapp {
         }
         $KEY = md5(json_encode($post));
         $fileName = $KEY.'.'.($is_hyaline ? 'png' : 'jpg');
-        $dir = 'data/attach/weapp_qrcode/'.substr($KEY, 0, 2).'/';
+        $dir = ATTACHDIR.'weapp_qrcode/'.substr($KEY, 0, 2).'/';
 
         if(is_file(ROOT . $dir . $fileName)){
             $return['src'] = $dir.$fileName;

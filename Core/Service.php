@@ -28,6 +28,8 @@ class Service{
 	protected $_DB;
 	private $config = [];
 	private $__Init = 0;
+    
+    private $_AttachDefDir = 'data/attach/'; //附件默认访问目录
 	
 	function __construct(){
 		
@@ -160,7 +162,9 @@ class Service{
 		define('COOKIEDOMAIN', $this->config['cookie']['domain']);
 		//加密函数混淆密钥
 		define('ENCODEKEY', $this->config['CodeKEY']);
-		
+        //附件保存目录
+        define('ATTACHDIR', $this->config['attachDir'] ? $this->config['attachDir'] : ROOT.$this->_AttachDefDir);
+        
 		$this->hook(__CLASS__ , __FUNCTION__);
 		return $this;
 	}
@@ -264,10 +268,17 @@ class Service{
 			$C['staticUrl'] = $siteurl;
 		}
 		unset($siteurl,$host);
-		
+        //如果附件没有定义访问地址 则为默认
+        if(!$C['picurl']){
+            $C['picurl'] = $this->_AttachDefDir;
+        }
+        
 		if(!(strpos($C['picurl'],'http') ===0)){
 			$C['picurl'] = $C['siteurl'].$C['picurl'];
 		}
+        //常量定义 附件访问地址
+        define('ATTACHURL', $C['picurl']);
+        
 		$C['sid']  = cookies('sid');
 		$this->var = $C;
 		unset($C['config']['db'], $C['config']['memory']);//全局变量删除数据库配置信息
@@ -369,16 +380,17 @@ class Service{
 		return new Attach();
 	}
 	
-	/**
-	 * 缓存类
-	 * 直接调用返回Cache对象 使用参数默认使用RAM 参考RAM参数介绍
-	 * @param type $cmd
-	 * @param type $key
-	 * @param type $value
-	 * @param type $ttl
-	 * @param type $pre
-	 * @return \ksaOS\Cache
-	 */
+    /**
+     * 缓存类
+     * 直接调用返回Cache对象 使用参数默认使用RAM 参考RAM参数介绍
+     * @param $cmd
+     * @param $key
+     * @param $value
+     * @param $ttl
+     * @param $pre
+     *
+     * @return Cache|string|null
+     */
 	public static function Cache($cmd=NULL, $key='', $value='', $ttl = 0, $pre = ''){
 		if($cmd){
 			return Cache::RAM($cmd, $key, $value, $ttl, $pre);
@@ -392,24 +404,5 @@ class Service{
 		return $Class->replace($file, $tplDir);
 	}
 
-    /**
-     * 加载引用此函数文件相同目录下的template模板文件
-     * @param $tpl 模板名（必须命名为tpl_$tpl.php）
-     * @return fileName 返回模板文件路径
-     * @throws \Exception
-     */
-    /*
-    public static function tpl($tpl=''){
-        $sys = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
-        $dir = Files::dir($sys[1]['file']);
-        $dir = explode('/',$dir);
-        foreach($dir as $k => $v){
-            if($k >1){
-                unset($dir[$k]);
-            }
-        }
-        $dir = implode('/',$dir);
-        return template::show($tpl, $dir.'/template/');
-    }
-    */
+ 
 }

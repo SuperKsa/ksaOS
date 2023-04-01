@@ -52,7 +52,7 @@ class WechatPay {
         ];
         $post = array_merges($post, $option);
         $post = json_encode($post);
-        $paysetting = APP::setting('WECHATPAY');
+        $paysetting = APP::setting('WECHAT_APP_PAY');
         $api = self::$WECHAT_API_JSAPI;
         $sign = self::authorizationV3('POST', $api, $post, $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, $post, [
@@ -178,6 +178,13 @@ class WechatPay {
      * @return array
      */
     static function authorizationV3($method='', $api ='', $post=NULL, $MCHID = '', $SERIALNO='', $certificate='', $privateKey=''){
+        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $MCHID = $MCHID ? $MCHID : $paysetting['MCHID'];
+        $SERIALNO = $SERIALNO ? $SERIALNO : $paysetting['SERIALNO'];
+        $certificate = $certificate ? $certificate : $paysetting['CERTIFICATE'];
+        $privateKey = $privateKey ? $privateKey : $paysetting['PRIVATEKEY'];
+        
+        
         $time = time();
         $nonce_str = rands(10);
         $sign = self::siginV3([
@@ -252,7 +259,7 @@ class WechatPay {
      * 60分钟自动抓取一次
      */
     static function certificates(){
-        $paysetting = APP::setting('WECHATPAY');
+        $paysetting = APP::setting('WECHAT_APP_PAY');
         $cacheKey = 'WechatPaycertificates_'.$paysetting['MCHID'];
         if(!($data = Cache($cacheKey))){
             $Authorization = self::authorizationV3('GET', self::$CERTIFICATES_API,'', $paysetting['MCHID'], $paysetting['SERIALNO']);
@@ -266,7 +273,7 @@ class WechatPay {
             $data = $data['data'];
             $data && Cache($cacheKey, $data, 3600);
         }
-        $wechatPaySetting = APP::setting('WECHATPAY');
+        $wechatPaySetting = APP::setting('WECHAT_APP_PAY');
         //自动解密证书
         foreach($data as $key => $value){
             $value['encrypt_certificate']['ciphertext'] = Aes256::decode($value['encrypt_certificate']['ciphertext'], $value['encrypt_certificate']['associated_data'], $value['encrypt_certificate']['nonce'], $wechatPaySetting['APIKEY']);
@@ -425,7 +432,7 @@ class WechatPay {
      * @return array|mixed
      */
     public static function query($PayCode='', $transaction_id =''){
-        $paysetting = APP::setting('WECHATPAY');
+        $paysetting = APP::setting('WECHAT_APP_PAY');
         $api = self::$WECHAT_API_QUERY.$transaction_id.'?mchid='.$paysetting['MCHID'];
         $sign = self::authorizationV3('GET', $api, '', $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, '', [
@@ -503,7 +510,7 @@ class WechatPay {
             $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
             $data = json_decode(json_encode($data),true);
             file_put_contents(ROOT.'./data/wechatpay.txt', json_encode($data));
-            $settingPay = APP::setting('WECHATPAY');
+            $settingPay = APP::setting('WECHAT_APP_PAY');
             //微信主动POST数据检查 开发者ID 商户ID 必须对应 并且有返回支付订单号
             if($data['mch_id'] == $settingPay['MCHID'] && $data['out_trade_no']){
                 $orderData = DB('user_payorders')->orderCode($data['out_trade_no']);

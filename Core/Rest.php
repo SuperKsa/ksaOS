@@ -245,6 +245,23 @@ class Rest{
     }
 
     /**
+     * 字段别名的处理
+     * 'uname > name' : uname字段将会变成name
+     * @param $field
+     * @return mixed|string
+     */
+    private static function _reKey($field=''){
+        $newField = $field;
+        //key支持别名（用尖括号隔开 右侧是where需要的字段）
+        if(strpos($field, '>') >0){
+            [$field, $whereField] = explode('>', $field);
+            $field = trim($field);
+            $newField = trim($whereField);
+        }
+        return [$field, $newField];
+    }
+
+    /**
      * 获取变量值 基础函数
      * 获取各种用户端提交的数据
      * @param array $data 数据源
@@ -271,7 +288,6 @@ class Rest{
             if(strpos($field,'/') !== false){
                 $tmp = [];
                 foreach(explode('/',$field) as $value){
-                    $value = trim($value);//字段名去除左右空白
                     $tmp[$value] = $rule;
                 }
                 $field = $tmp;
@@ -286,21 +302,23 @@ class Rest{
         }elseif(is_array($field)){
             $dt = [];
             foreach($field as $key => $value){
+                list($key, $newKey) = self::_reKey($key);
                 $value = $value === '' ? null : $value;
                 $val = isset($data[$key]) ? self::filter($data[$key], $value) : null;
                 $val = is_null($val) ? $deft : $val;
                 //最后如果值为null 表示未传递 不返回
                 if(!is_null($val)) {
-                    $dt[$key] = $val;
+                    $dt[$newKey] = $val;
                 }
             }
         //返回所有变量
         }else{
             $dt = [];
             foreach($data as $key => $value){
+                list($key, $newKey) = self::_reKey($key);
                 $value = self::filter($value, $rule);
                 $value = is_null($value) ? $deft : $value;
-                $dt[$key] = $value;
+                $dt[$newKey] = $value;
             }
         }
         return $dt;
@@ -312,10 +330,23 @@ class Rest{
      * @return array
      */
     static function orgData($M=NULL){
-        $M = strtoupper($M);
-        if($M === NULL || !in_array($M,['GET'])){
-            parse_str(file_get_contents('php://input'), $inputdata);
+        if($M !== null){
+            $M = strtoupper($M);
         }
+        
+        if($M === NULL || !in_array($M,['GET'])){
+            $input = file_get_contents('php://input');
+            try{
+                $inputdata = json_decode($input, true);
+            }catch (\Exception $e){
+                try{
+                    parse_str($input, $inputdata);
+                }catch (\Exception $e2){
+                
+                }
+            }
+        }
+        
         $inputdata = (array)$inputdata;
 
         switch ($M){
@@ -360,10 +391,10 @@ class Rest{
                 $data = $_GET;
                 break;
         }
-
         if($M === NULL){
             $data = array_merges($data, self::orgData('FILES'));
             $data = array_merges($data, $inputdata);
+            
         }
         return (array)$data;
     }
@@ -396,14 +427,8 @@ class Rest{
                     $filter = $value;
                 }
                 $filter = $filter ? $filter : 'text';
-                $whereField = $field;
-                //key支持别名（用尖括号隔开 右侧是where需要的字段）
-                if(strpos($field, '>') >0){
-                    [$field, $whereField] = explode('>', $field);
-                    $field = trim($field);
-                    $whereField = trim($whereField);
-                }
 
+                list($field, $whereField) = self::_reKey($field);
                 if(isset($dt[$field])){
                     $v = $dt[$field];
                     if(gettype($filter) =='object'){

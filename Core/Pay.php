@@ -120,7 +120,7 @@ class Pay{
         $uid = $C['uid'] && $C['uid']['user'] ? intval($C['uid']) : 0;
         $orderCode = Filter::int($orderCode);
         $PayType = self::$TYPES[$PayType] ? $PayType : '';
-        $dataType = in_array($dataType,['goods','vip','expert']) ? $dataType : '';
+        //$dataType = in_array($dataType,['goods','vip','expert']) ? $dataType : '';
         $dataID = Filter::int($dataID);
         $Total = floatval($Total);
         $Title = stripTags($Title, 120);

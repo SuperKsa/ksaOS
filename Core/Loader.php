@@ -58,7 +58,7 @@ class Loader {
 		}else{
 			$class = ucfirst(strtolower($class));
 		}
-		
+
 		//文件名首字母必须大写
 		$file = $class.'.php';
 		$core = KSAOS.'Core/';

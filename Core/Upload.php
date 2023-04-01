@@ -56,24 +56,27 @@ class Upload {
 			$newName = md5(microtime(true).$file['tmp_name']);
 			$this->FILE = [
 				'fileName' => APP::File()->name($file['name']),
-				'path' => '',
+				'path' => '', //相对路径 基于 $Mod
 				'name' => '',
 				'dir' => '',
 				'ext' => '',
 				'size' => $file['size'],
 				'isPic' => 0,
 				'picWidth' => 0,
-				'picHeight' => 0
+				'picHeight' => 0,
+                'target' => '', //绝对路径
 			];
 			$this->FILE['ext'] = APP::File()->ext($file['name']);
 			$this->FILE['name'] = $newName.'.'.$this->FILE['ext'];
 			//目录结构：/年月/日/时/文件名前两位/
-			$this->FILE['dir'] = '/'.(date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($newName, 0,2).'/';
-			$this->FILE['path'] = $this->FILE['dir'].$this->FILE['name'];
-			$saveDir = ROOT.'data/attach/'.$Mod.'/'.$this->FILE['dir'];
-			$this->FilePath = $saveDir.$this->FILE['name'];
-			
-			
+			//$this->FILE['dir'] = (date('Y').date('m')).'/'.date('d').'/'.date('H').'/'. substr($newName, 0,2);
+            $this->FILE['dir'] = self::get_attach_dir($Mod, $newName);
+			$this->FILE['path'] = $this->FILE['dir'].'/'.$this->FILE['name'];
+			$saveDir = ATTACHDIR.$Mod.'/'.$this->FILE['dir'];
+   
+			$this->FilePath = $saveDir.'/'.$this->FILE['name'];
+            $this->FILE['target'] = $this->FilePath;
+   
 			$picInfo = APP::File()->picInfo($this->TmpPath);
 			$this->FILE['isPic'] = $picInfo['width'] ? 1 : 0;
 			$this->FILE['picWidth'] = $picInfo['width'];
@@ -109,5 +112,58 @@ class Upload {
 		APP::hook(__CLASS__ , __FUNCTION__);
 		return $return;
 	}
+    
+    /**
+     * 获取一个附件储存位置
+     * @param $Mod string 模块名
+     * @param $fileName string 文件名
+     *
+     * @return string
+     */
+    private static function get_attach_dir($Mod='', $fileName=''){
+        
+        //目录结构：/年月/日/时/文件名前两位/
+        $saveDir = date('Y').'/'.date('m').'/'.date('d').'/'.date('H').'/'. substr($fileName, 0,2);
+        Files::mkdir(ATTACHDIR.$Mod.'/'.$saveDir);
+        return $saveDir;
+    }
+    
+    /**
+     * 保存base64图片
+     * @param $fileName string 文件名 不包含后缀
+     * @param $Mod string 模块名
+     * @param $base64Str string base64原文
+     * @return array 返回图片地址（不包含模块名）
+     */
+    public static function SaveBase64($fileName='', $Mod='', $base64Str=''){
+        //匹配出图片的格式
+        if (preg_match('/^(data:\s*image\/(\w+);base64,)/', $base64Str, $result)){
+            
+            $dir = self::get_attach_dir($Mod, $fileName);
+            
+            $ext = $result[2];
+            //组合文件路径
+            $file = $fileName.'.'.$ext;
+            $path = $dir.'/'.$file;
+            $savePath = ATTACHDIR.$Mod.'/'.$path;
+            $content = base64_decode(str_replace($result[1], '', $base64Str));
+            //保存图片
+            if (file_put_contents($savePath, $content)){
+                $picInfo = APP::File()->picInfo($savePath);
+                //返回图片地址路径
+                return [
+                    'path' => $path,
+                    'name' => $file,
+                    'dir' => $dir,
+                    'ext' => $ext,
+                    'size' => strlen($content),
+                    'width' => $picInfo['width'],
+                    'height' => $picInfo['height'],
+                ];
+            }
+
+        }
+        return [];
+    }
 	
 }

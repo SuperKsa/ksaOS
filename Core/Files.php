@@ -50,8 +50,9 @@ class Files{
 	 */
 	public static function mkdir($dir='', $mode = 0777){
 		if(!is_dir($dir)) {
-			self::mkdir(dirname($dir), $mode);
-			@mkdir($dir, $mode);
+            $upDir = dirname($dir);
+			!is_dir($upDir) && self::mkdir($upDir, $mode);
+			mkdir($dir, $mode);
 		}
 		return true;
 	}
@@ -215,4 +216,20 @@ class Files{
 			return NULL;
 		}
 	}
+    
+    /**
+     * 获取文件总行数
+     * @param $file
+     *
+     * @return int
+     */
+    public static function getFileLineMax($file){
+        $getfp = fopen($file, 'r');
+        $lines = 0;
+        while (fgets($getfp)) {
+            $lines ++;
+        }
+        fclose($getfp);
+        return $lines;
+    }
 }
