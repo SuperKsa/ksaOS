@@ -894,7 +894,13 @@ class DB{
 		} else {
 			$as = '';
 			if(strpos($field,'.') !== false){
-				list($as,$field) = explode('.',$field);
+				list($as,$field2) = explode('.',$field);
+                //判断是否为json查询
+                if(strpos($as, '->') !== false && strpos($as, '$') !== false){
+                    return $field;
+                }else{
+                    $field = $field2;
+                }
 			}
 			if (strpos($field, '`') !== false){
 				$field = str_replace('`', '', $field);
