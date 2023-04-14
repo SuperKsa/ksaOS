@@ -120,7 +120,7 @@ class Upload {
      *
      * @return string
      */
-    private static function get_attach_dir($Mod='', $fileName=''){
+    public static function get_attach_dir($Mod='', $fileName=''){
         
         //目录结构：/年月/日/时/文件名前两位/
         $saveDir = date('Y').'/'.date('m').'/'.date('d').'/'.date('H').'/'. substr($fileName, 0,2);
