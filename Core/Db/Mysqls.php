@@ -10,6 +10,7 @@
  */
 namespace ksaOS\Db;
 use PDO;
+
 if(!defined('KSAOS')) {
 	exit('Error.');
 }
@@ -96,7 +97,9 @@ class Mysqls{
 				}
 			}
 		}
+  
 		$id = $id ? $id : $defaultID;
+        $this->curlink = $this->link[$id];
 		if($this->ping($this->link[$id])) {
             return $this->pre.$tablename;
 		}else{
