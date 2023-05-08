@@ -26,10 +26,10 @@ class Memory {
 	/**
 	 * 初始化
 	 * 只能在底层调用
-	 * @param type $config
+	 * @param array $config
 	 * @return $this
 	 */
-	function Init($config) {
+	function Init($config=[]) {
 		if(!defined('___KSAOS_MEMORYINIT___')){
 			define('___KSAOS_MEMORYINIT___',1);
 			$this->pre = empty($config['pre']) ? substr(md5($_SERVER['HTTP_HOST']), 0, 6).'_' : $config['pre'];
@@ -80,11 +80,6 @@ class Memory {
 		} catch (\Exception $e) {
 			throw new \Exception('Redis启动失败（检查服务器是否安装Redis组件）');
 		}
-		if(!$this->ping()){
-			throw new \Exception('Redis连接失败，请检查连接信息并确认Redis是否启动');
-		}
-		
-		return false;
 	}
 	
 	public function ping(){
@@ -98,7 +93,7 @@ class Memory {
 	
 	/**
 	 * 读取数据 一个和多个KEY
-	 * @param type $key 支持多个键名 key 或者 [key1 , key2 ...]
+	 * @param string $key 支持多个键名 key 或者 [key1 , key2 ...]
 	 * @return boolean
 	 */
 	function get($key) {
@@ -115,8 +110,8 @@ class Memory {
 
 	/**
 	 * 读取数据 多个KEY
-	 * @param type $keys 只能是数组[key1 , key2 ...]
-	 * @return boolean
+	 * @param string $keys 只能是数组[key1 , key2 ...]
+	 * @return boolean|array
 	 */
 	function getMultiple($keys) {
 		if($this->connect()){
@@ -139,7 +134,7 @@ class Memory {
 	
 	/**
 	 * 选择数据库
-	 * @param type $db 默认DB=0
+	 * @param string $db 默认DB=0
 	 * @return boolean
 	 */
 	function select($db=0) {
@@ -152,9 +147,9 @@ class Memory {
 	/**
 	 * 写入数据
 	 * 支持多维数组
-	 * @param type $key
-	 * @param type $value
-	 * @param type $ttl
+	 * @param string $key
+	 * @param string|array|int $value
+	 * @param string $ttl
 	 * @return boolean
 	 */
 	function set($key, $value, $ttl = 0) {
@@ -173,7 +168,7 @@ class Memory {
 	
 	/**
 	 * 删除key
-	 * @param type $key 支持多个键名 key 或者 [key1 , key2 ...]
+	 * @param string $key 支持多个键名 key 或者 [key1 , key2 ...]
 	 * @return boolean
 	 */
 	function del($key) {
@@ -318,7 +313,22 @@ class Memory {
 		}
 		return false;
 	}
-
+    
+    /**
+     * 查，取值【value|false】
+     * @param $key
+     *
+     * @return false
+     * @throws \Exception
+     */
+    function hGet($key, $field) {
+		if($this->connect()){
+			$key = $this->_key($key);
+			return $this->obj->hGet($key , $field);
+		}
+		return false;
+	}
+ 
 	function hGetAll($key) {
 		if($this->connect()){
 			$key = $this->_key($key);
@@ -350,7 +360,7 @@ class Memory {
 		return false;
 	}
 	
-	private function _key($str) {
+	public function _key($str) {
 		$pre = $this->pre;
 		if(is_array($str)) {
 			foreach($str as &$val) {
@@ -361,4 +371,37 @@ class Memory {
 		}
 		return $str;
 	}
+    
+    /**
+     * 更新指定数组类key的值
+     * @param $cacheKey string 缓存键名
+     * @param $ttl int 过期时间
+     * @param $update array 需要更新的值
+     * @param $isStep bool 是否是递增模式 true=是(此时$update中对应key的数字开头必须带有+-符号)
+     *
+     * @return bool
+     */
+    public function ArrayUpdate($cacheKey, $ttl=0, $update=[], $isStep=false){
+        $data = $this->get($cacheKey);
+        
+        if($data && is_array($data) && $update &&  is_array($update)){
+            
+            foreach($update as $key => $value){
+                if($isStep){
+                    $k = substr((string)$value, 0,1);
+                    $val = isset($data[$key]) ? intval($data[$key]) : 0;
+                    if($k == '+'){
+                        $val += abs($value);
+                        $value = $val;
+                    }else if($k == '-'){
+                        $val -= abs($value);
+                        $value = $val > 0 ? $val : 0;
+                    }
+                }
+                $data[$key] = $value;
+            }
+            return $this->set($cacheKey, $data, $ttl);
+        }
+        return false;
+    }
 }
