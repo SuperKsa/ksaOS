@@ -250,4 +250,41 @@ class Attach{
 		}
 		return '';
 	}
+    
+    /**
+     * 获取指定附件ID的所有列表数据
+     * @param $aids array|int 附件id 支持数组多个
+     * @param $id int 关联数据id 可选
+     * @param $mod string 关联模块标识 可选
+     *
+     * @return array
+     */
+    public static function get_Data($aids=[], $id=0, $mod=''){
+        $data = [];
+        $where = [];
+        if($aids){
+            $where['aid'] = $aids;
+        }
+        if($id){
+            $where['id'] = $id;
+        }
+        if($mod){
+            $where['idtype'] = $mod;
+        }
+        
+        $id_table_ids = [];
+        if($where){
+            foreach(DB('attach')->where($where)->fetch_all() as $value){
+                $id_table_ids[$value['tableID']][$value['aid']] = $value['aid'];
+            }
+            if($id_table_ids){
+                foreach($id_table_ids as $tableid => $valids){
+                    foreach(DB('attach_'.$tableid)->where(['aid'=>$valids])->fetch_all() as $value){
+                        $data[$value['aid']] = $value;
+                    }
+                }
+            }
+        }
+        return $data;
+    }
 }
