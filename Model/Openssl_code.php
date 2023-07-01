@@ -17,6 +17,16 @@ if(!defined('KSAOS')) {
 
 class Openssl_code {
     /**
+     * 参与加密的密钥
+     * @var string
+     */
+    public static $KEY = '';
+    /**
+     * 参与加密的私钥
+     * @var string
+     */
+    public static $IV = '';
+    /**
      * 加密
      * @param $str
      *
@@ -24,6 +34,12 @@ class Openssl_code {
      */
     public static function encode($str, $key='', $iv='')
     {
+        if(!$key){
+            $key = self::$KEY;
+        }
+        if(!$iv){
+            $iv = self::$IV;
+        }
         if(!$iv){
             $iv = $key;
         }
@@ -42,6 +58,12 @@ class Openssl_code {
      */
     public static function decode($str, $isjson = 0, $key='', $iv='')
     {
+        if(!$key){
+            $key = self::$KEY;
+        }
+        if(!$iv){
+            $iv = self::$IV;
+        }
         if(!$iv){
             $iv = $key;
         }
