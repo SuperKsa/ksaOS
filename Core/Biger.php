@@ -37,6 +37,11 @@ class Biger{
 	protected $connections, $stdoutFile, $pidFile, $logFile, $user, $reloadable ,$daemonize, $globalEvent = NULL;
 	
 	protected $listen = 0;
+    /**
+     * new worker的第二个参数值
+     * @var null
+     */
+    protected $WorkerParam = NULL;
 			
 	function __construct(){
 		
@@ -57,7 +62,7 @@ class Biger{
 	protected function onError($con, $code, $msg){}
 	
 	private function _this_run(){
-		$this->_Worker = new \Workerman\Worker($this->socket);
+		$this->_Worker = new \Workerman\Worker($this->socket, $this->WorkerParam);
 		$Worker = $this->_Worker;
 		if(!is_null($this->id)){ $Worker->id = $this->id; }
 		$Worker->name = $this->name ? $this->name.'(KSAOS)' : self::_name ;
@@ -86,8 +91,8 @@ class Biger{
 		$Worker->onConnect = function($con){
 			$this->onConnect($con);
 		};
-		$Worker->onMessage = function($con){
-			$this->onMessage($con);
+		$Worker->onMessage = function($con, $data=NULL){
+			$this->onMessage($con, $data);
 		};
 		$Worker->onClose = function($con){
 			$this->onClose($con);
