@@ -49,20 +49,20 @@ class Loader {
 		if(strpos($class, '\\') !== false){
 			$cl = [];
 			foreach(explode('\\', $class) as $i => $v){
-				$v = strtolower($v);
 				$cl[] = ucfirst($v);
 			}
 			$class = implode('/',$cl);
 			unset($cl);
 		//调用单类文件时 文件名首字母大写 其余均小写
 		}else{
-			$class = ucfirst(strtolower($class));
+			$class = ucfirst($class);
 		}
-
+  
 		//文件名首字母必须大写
 		$file = $class.'.php';
 		$core = KSAOS.'Core/';
 		$model = KSAOS.'Model/';
+        $AppClass = PATHS.'class/';
 		$loadFile = NULL;
 		//从Core核心层找文件
 		if(is_file($core.$file)){
@@ -70,7 +70,10 @@ class Loader {
 		//Core找不到再从Model扩展层找
 		}elseif(is_file($model.$file)){
 			$loadFile = $model.$file;
-		}
+		//Model找不到再从App/class扩展层找
+		}elseif(is_file($AppClass.'class_'.$file)){
+            $loadFile = $AppClass.'class_'.$file;
+        }
 		//有文件时加载文件 否则不处理
 		if($loadFile){
 			include_once $loadFile;

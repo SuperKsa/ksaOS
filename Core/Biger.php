@@ -41,7 +41,7 @@ class Biger{
      * new worker的第二个参数值
      * @var null
      */
-    protected $WorkerParam = NULL;
+    protected $WorkerParam = [];
 			
 	function __construct(){
 		
