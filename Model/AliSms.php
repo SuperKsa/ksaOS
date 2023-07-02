@@ -6,10 +6,10 @@
  * @version V1.0
  *
  * 发送短信用法:
-    Alisms::send('18888888888', 4, 'XXX科技', 'SMS_248425303', ['code'=>1234]);
+    AliSms::send('18888888888', 4, 'XXX科技', 'SMS_248425303', ['code'=>1234]);
  *
  * 发送语音通知用法：
-    Alisms::voice('18888888888', 'SMS_248425303', ['code'=>1234])
+    AliSms::voice('18888888888', 'SMS_248425303', ['code'=>1234])
  *
  */
 namespace ksaOS;
