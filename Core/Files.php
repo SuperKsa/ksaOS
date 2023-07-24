@@ -101,6 +101,43 @@ class Files{
 		}
 		return $file;
 	}
+    
+    /**
+     * 获取文件大小
+     * @param $file
+     * @param $calc
+     *
+     * @return false|int
+     */
+    public static function size($file, $calc=false){
+        if(is_file($file)){
+            $size = filesize($file);
+            if($calc){
+                return self::formatSize($size);
+            }else{
+                return $size;
+            }
+        }
+        return 0;
+    }
+    
+    /**
+     * 文件字节转大小描述
+     * @param $bytes
+     *
+     * @return string
+     */
+    public static function formatSize($bytes) {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        $index = 0;
+    
+        while ($bytes >= 1024 && $index < count($units) - 1) {
+            $bytes /= 1024;
+            $index++;
+        }
+    
+        return round($bytes, 2) . ' ' . $units[$index];
+    }
 	
 	/**
 	 * 获取指定目录下的文件列表
