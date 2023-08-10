@@ -39,6 +39,7 @@ class Wechat {
 
     private static $USER_CODE_TOKEN_API = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid={appid}&secret={secret}&code={code}&grant_type=authorization_code';
     private static $USER_CODE_INFO_API = 'https://api.weixin.qq.com/sns/userinfo?access_token={token}&openid={openid}&lang=zh_CN';
+    
 
     /**
      * 获取微信基础 access_token
@@ -155,8 +156,8 @@ class Wechat {
 
         //拿用户access_token
         $curl = Curls::send(str_replace(['{appid}', '{secret}', '{code}'], [$APPID, $AppSecret, $code], self::$USER_CODE_TOKEN_API));
-
         $data = $curl['data'] ? json_decode($curl['data'], true) : [];
+        
         $token = $data['access_token'] ? $data['access_token'] : '';
         $openid = $data['openid'] ? $data['openid'] : '';
         $dt = [];
@@ -167,7 +168,27 @@ class Wechat {
         }
         return $dt;
     }
-
+    
+    static function code2appid($code='', $APPID='', $AppSecret=''){
+        //拿用户access_token
+        $curl = Curls::send(str_replace(['{appid}', '{secret}', '{code}'], [$APPID, $AppSecret, $code], self::$USER_CODE_TOKEN_API));
+        $data = $curl['data'] ? json_decode($curl['data'], true) : [];
+        
+        return $data;
+    }
+    
+    /**
+     * 生成用户openid 引导地址
+     * @param $appid string APPID
+     * @param $url string 需要回调的地址，不需要urlencode
+     * @param $scope string 默认 SCOPE
+     *
+     * @return string
+     */
+    static function authurl($appid, $url='', $scope='SCOPE'){
+        $url = urlencode($url);
+        return 'https://open.weixin.qq.com/connect/oauth2/authorize?appid='.$appid.'&redirect_uri='.$url.'&response_type=code&scope='.$scope.'&state=STATE#wechat_redirect';
+    }
 
 
 
