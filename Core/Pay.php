@@ -37,7 +37,7 @@ class Pay{
     static function orderCode($N=20){
         $str = intval(date('Y')) - 2020; //第一组 1-2位 年差值
         $str .= date('mdHis'); //第二组 4位 月日
-        list($ms, $sec) = explode(' ', microtime());
+        [$ms, $sec] = explode(' ', microtime());
         //毫秒控制6位
         $ms = str_pad(substr($ms, 2, 6), 6, '0', STR_PAD_RIGHT); //右侧补0
         $str += $sec; //累加10位时间戳
@@ -59,7 +59,7 @@ class Pay{
      * @param int $PayID 支付订单PayID
      * @return array $returnData
      */
-    function query($PayID=0){
+    public function query($PayID=0){
         $PayID = intval($PayID);
         $Data = self::Pay_getID($PayID);
         $queryDt = [];
@@ -99,13 +99,63 @@ class Pay{
         }
         return $returnData;
     }
+    
+    
+    /**
+     * 创建支付数据
+     * @param $uid
+     * @param $dataID
+     * @param $dataType
+     * @param $orderCode
+     * @param $Title
+     * @param $PayType
+     * @param $Total
+     *
+     * @return array|int|string
+     */
+    static private function createPayData($uid=0, $dataID=0, $dataType='', $orderCode='', $Title='', $PayType='', $Total=0){
+        //订单失效时间 秒
+        $orderOutTime = 3600;
+        //检查是否有重复的待支付订单 数据类型 与数据订单号相同
+        $PayData = DB('pay_data')->where(['uid'=>$uid, 'DataID'=>$dataID,'DataType'=>$dataType,'DataOrderCode'=>$orderCode, 'Status'=>[0,1]])->fetch_first();
+        if($PayData){
+            //如果该订单超过有效期  则变更为失效状态
+            if($PayData['createDate'] < time() - $orderOutTime){
+                DB('pay_data')->where('PayID', $PayData['PayID'])->update(['status'=>3]);
+                unset($PayData);
+            }else{
+                $PayData['payCreateData'] = json_decode($PayData['payCreateData'], true);
+            }
+        }
 
+        if(!$PayData) {
+            //添加待支付订单数据到DB
+            $PayData = [
+                'uid' => $uid,
+                'DataID' => $dataID,
+                'DataType' => $dataType,
+                'DataOrderCode' => $orderCode,
+                'title' => $Title,
+                'total' => $Total,
+                'PayType' => $PayType,
+                'IP' => Rest::ip(),
+                'IP_port' => Rest::ipProt(),
+                'useragent' => Rest::useragent(),
+                'createDate' => time(),
+                'Status' => 0,
+                'PayCode' => self::orderCode()
+            ];
+            $PayData['PayID'] = DB('pay_data')->insert($PayData, true);
+        }
+        return $PayData;
+    }
+    
     /**
      * 创建支付订单
      * 注意：
-     *      强制为当前用户登录用户创建支付订单！
      *      根据传入的数据自动过期、自动创建
      * 如果未登录 则而失败
+     * @param int $uid 关联的用户ID (必须)
      * @param string $orderCode 订单ID (必须)
      * @param string $PayType 支付类型(必须) wechat || alipay
      * @param string $dataType 商品数据类型 (必须) goods=热卖 vip=会员 expert=专家
@@ -115,16 +165,15 @@ class Pay{
      * @param string $Summary 支付摘要 用户支付时显示 可选 100字
      * @return array $returnData
      */
-    static function create($orderCode, $PayType='', $dataType='', $dataID='', $Total=0, $Title='', $Summary=''){
+    static function create($uid, $orderCode, $PayType='', $dataType='', $dataID='', $Total=0, $Title='', $Summary=''){
         global $C;
-        $uid = $C['uid'] && $C['uid']['user'] ? intval($C['uid']) : 0;
+        $uid = intval($uid);
         $orderCode = Filter::int($orderCode);
         $PayType = self::$TYPES[$PayType] ? $PayType : '';
         //$dataType = in_array($dataType,['goods','vip','expert']) ? $dataType : '';
         $dataID = Filter::int($dataID);
         $Total = floatval($Total);
         $Title = stripTags($Title, 120);
-        $Summary = stripTags($Summary, 120);
         $returnData = [
             'success' => 0,
             'uid' => $uid,
@@ -132,45 +181,12 @@ class Pay{
             'PayData' => [] //返回的订单数据
         ];
 
-        //订单失效时间 秒
-        $orderOutTime = 3600;
-
         if($uid > 0 && $PayType && $dataID && $Total >0 && $Title){
 
             $user = DB('user')->uid($uid);
             if($user){
-
-                //检查是否有重复的待支付订单 数据类型 与数据订单号相同
-                $PayData = DB('pay_data')->where(['uid'=>$uid, 'DataID'=>$dataID,'DataType'=>$dataType,'DataOrderCode'=>$orderCode, 'Status'=>[0,1]])->fetch_first();
-                if($PayData){
-                    //如果该订单超过有效期  则变更为失效状态
-                    if($PayData['createDate'] < time() - $orderOutTime){
-                        DB('pay_data')->where('PayID', $PayData['PayID'])->update(['status'=>3]);
-                        unset($PayData);
-                    }else{
-                        $PayData['payCreateData'] = json_decode($PayData['payCreateData'], true);
-                    }
-                }
-
-                if(!$PayData) {
-                    //添加待支付订单数据到DB
-                    $PayData = [
-                        'uid' => $uid,
-                        'DataID' => $dataID,
-                        'DataType' => $dataType,
-                        'DataOrderCode' => $orderCode,
-                        'title' => $Title,
-                        'total' => $Total,
-                        'PayType' => $PayType,
-                        'IP' => Rest::ip(),
-                        'IP_port' => Rest::ipProt(),
-                        'useragent' => Rest::useragent(),
-                        'createDate' => time(),
-                        'Status' => 0,
-                        'PayCode' => self::orderCode()
-                    ];
-                    $PayData['PayID'] = DB('pay_data')->insert($PayData, true);
-                }
+                $PayData = self::createPayData($uid, $dataID, $dataType, $orderCode, $Title, $PayType, $Total);
+                
                 //支付平台回调地址
                 $callbackUrl = $C['siteurl'].'pay/confirm/callback_wechat/';
 
@@ -187,9 +203,8 @@ class Pay{
                 }elseif($PayType == 'wechat' || $PayType == 'weapp'){
 
                     if($user['WXopenid']){
-                        $wechatSetting = $PayType == 'weapp' ? APP::setting('WEAPP') : APP::setting('WECHAT');
-                        $wechatPaySetting = APP::setting('WECHATPAY');
-                        $payDt = WechatPay::create_jsapi($wechatSetting['APPID'], $wechatPaySetting['MCHID'], [
+                        $WechatAPPSetting = APP::setting('WECHAT_APP_PAY');
+                        $payDt = WechatPay::create_jsapi($WechatAPPSetting['APPID'], $WechatAPPSetting['MCHID'], [
                             'description' => $Title,
                             'out_trade_no' => $PayData['PayCode'],
                             'notify_url' => $callbackUrl,
@@ -259,7 +274,7 @@ class Pay{
      * @param string $orderCode 订单号
      * @return boolean
      */
-    function __Pay_success_DatatypeStatus($OrderData=[], $dataType='',$dataID='',$orderCode=''){
+    private function __Pay_success_DatatypeStatus($OrderData=[], $dataType='',$dataID='',$orderCode=''){
 
         if(!$OrderData || !$OrderData['DataOrderCode'] || !$OrderData['PayID']){
             return false;
