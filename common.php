@@ -407,11 +407,11 @@ function base($Type = 'DECODE', $string='', $key = '', $expiry = 0) {
 /**
  * strip_tags二次封装
  * 字符安全过滤(HTML、PHP)
- * @param type $str 字符串
- * @param type $len 需要截取多少个字符
- * @return type
+ * @param string $str 字符串
+ * @param int $len 需要截取多少个字符
+ * @return string
  */
-function stripTags($str,$len=0){
+function stripTags($str='',$len=0){
 	if(is_array($str)){
 		foreach($str as $k => $v){
 			$str[$k] = stripTags($v,$len);
