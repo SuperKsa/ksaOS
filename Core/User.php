@@ -40,6 +40,16 @@ class User{
         }
 	    return $data;
     }
+    
+    static function WXopenidInfo($openid='', $select='*'){
+        $data = DB('user')->select($select)->where('WXopenid', $openid)->fetch_first();
+        return $data;
+    }
+    
+    static function WXunionid($unionid='', $select='*'){
+        $data = DB('user')->select($select)->where('WXunionid', $unionid)->fetch_first();
+        return $data;
+    }
 
     /**
      * 过滤API接口输出user字段
@@ -113,7 +123,7 @@ class User{
 		if($account && $password && $user && is_array($user) && isset($user['uid']) && $user['password']){
             $PWstatus = false;
 		    if($account =='WECHAT'){
-		        if($password == $user['WXopenid']){
+		        if(($user['WXopenid'] && $password == $user['WXopenid']) || ($user['WXunionid'] && $password == $user['WXunionid'])){
                     $PWstatus = true;
                 }
             }else{
@@ -137,6 +147,8 @@ class User{
 		}
 		return false;
 	}
+ 
+ 
 	
 	/**
 	 * 校验用户的密码是否正确
