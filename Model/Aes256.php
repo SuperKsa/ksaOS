@@ -29,7 +29,7 @@ class Aes256{
      * @return string
      * @throws \SodiumException
      */
-    public static function encode(string $message , string $associatedData , string $nonceStr , string $AesKEY){
+    public static function encode(string $message='' , string $associatedData='' , string $nonceStr='' , string $AesKEY=''){
 
         // ext-sodium (default installed on >= PHP 7.2)
         if (function_exists('\sodium_crypto_aead_aes256gcm_encrypt')) {
@@ -55,7 +55,7 @@ class Aes256{
      * @return string
      * @throws \SodiumException
      */
-    public static function decode(string $ciphertext, string $associatedData, string $nonceStr, string $AesKEY) {
+    public static function decode(string $ciphertext='', string $associatedData='', string $nonceStr='', string $AesKEY='') {
         $ciphertext = base64_decode($ciphertext);
 
         // ext-sodium (default installed on >= PHP 7.2)

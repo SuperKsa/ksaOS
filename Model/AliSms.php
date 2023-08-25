@@ -55,7 +55,7 @@ class Alisms{
 
     private static function sign($sign=''){
         $sign = 'GET&%2F&'.urlencode($sign);
-        $sign = urlencode(Hmacsha::Sha1($sign, self::$accessKeySecret.'&'));
+        $sign = urlencode(HmacSha::Sha1($sign, self::$accessKeySecret.'&'));
         return $sign;
     }
 

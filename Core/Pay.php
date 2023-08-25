@@ -23,7 +23,7 @@ class Pay{
         'WechatAPP' => '微信APP支付'
     ];
 
-    function Pay_getID($id){
+    static function Pay_getID($id){
         return DB('pay_data')->ID($id);
     }
 
@@ -56,10 +56,12 @@ class Pay{
 
     /**
      * 支付订单状态查询
-     * @param int $PayID 支付订单PayID
-     * @return array $returnData
+     * @param $PayID int 支付订单PayID
+     * @param $callbackFunc function 成功后的回调函数
+     *
+     * @return array
      */
-    public function query($PayID=0){
+    public static function query($PayID=0, $callbackFunc=null){
         $PayID = intval($PayID);
         $Data = self::Pay_getID($PayID);
         $queryDt = [];
@@ -88,7 +90,9 @@ class Pay{
             $isTotalOK = 1;
             if($queryDt['success'] && $isTotalOK){
                 $returnData['success'] = 1;
-                $this->__Pay_success_DatatypeStatus($Data,$Data['DataType'],$Data['DataID'],$Data['DataOrderCode']);
+                if(is_callable($callbackFunc)){
+                    $callbackFunc($queryDt, $Data['PayCode'], $queryDt['total'], $Data['DataOrderCode']);
+                }
             }
             $returnData['msg'] = $queryDt['msg'];
             $returnData['isNew'] = 1; //首次确认状态 必须要与success=1一起判断支付成功
@@ -162,10 +166,10 @@ class Pay{
      * @param int $dataID 商品数据ID (必须) int
      * @param string $Total 支付金额 (必须) 单位分
      * @param string $Title 商品名称 (必须) 100字
-     * @param string $Summary 支付摘要 用户支付时显示 可选 100字
+     * @param string $extend 扩展字段 数组 可选 100字
      * @return array $returnData
      */
-    static function create($uid, $orderCode, $PayType='', $dataType='', $dataID='', $Total=0, $Title='', $Summary=''){
+    static function create($uid, $orderCode, $PayType='', $dataType='', $dataID='', $Total=0, $Title='', $extend=[]){
         global $C;
         $uid = intval($uid);
         $orderCode = Filter::int($orderCode);
@@ -174,6 +178,9 @@ class Pay{
         $dataID = Filter::int($dataID);
         $Total = floatval($Total);
         $Title = stripTags($Title, 120);
+        if(!$extend){
+            $extend = [];
+        }
         $returnData = [
             'success' => 0,
             'uid' => $uid,
@@ -202,9 +209,8 @@ class Pay{
                     }
                 }elseif($PayType == 'wechat' || $PayType == 'weapp'){
 
-                    if($user['WXopenid']){
-                        $WechatAPPSetting = APP::setting('WECHAT_APP_PAY');
-                        $payDt = WechatPay::create_jsapi($WechatAPPSetting['APPID'], $WechatAPPSetting['MCHID'], [
+                    if($extend['openid']){
+                        $payDt = WechatPay::create_jsapi($extend['APPID'], $extend['MCHID'], [
                             'description' => $Title,
                             'out_trade_no' => $PayData['PayCode'],
                             'notify_url' => $callbackUrl,
@@ -213,7 +219,7 @@ class Pay{
                                 'currency' => 'CNY'
                             ],
                             'payer' => [
-                                'openid' => $user['WXopenid'],
+                                'openid' => $extend['openid'],
                             ],
                             'scene_info' => [
                                 'payer_client_ip' => Rest::ip(),
@@ -266,28 +272,4 @@ class Pay{
         return $returnData;
     }
 
-    /**
-     * 支付成功后更新对应数据状态(仅限于首次支付成功处理) 当前模块内部函数
-     * @param array $OrderData 订单数据
-     * @param string $dataType 订单类型
-     * @param string $dataID 订单ID
-     * @param string $orderCode 订单号
-     * @return boolean
-     */
-    private function __Pay_success_DatatypeStatus($OrderData=[], $dataType='',$dataID='',$orderCode=''){
-
-        if(!$OrderData || !$OrderData['DataOrderCode'] || !$OrderData['PayID']){
-            return false;
-        }
-
-        $user = DB('user')->ID($OrderData['uid']);
-        if(!$user){
-            return false;
-        }
-
-        //更新支付状态为成功
-        DB('pay_data')->where('PayID', $OrderData['PayID'])->update(['Status'=>1,'checkDate'=>time()]);
-
-
-    }
 }

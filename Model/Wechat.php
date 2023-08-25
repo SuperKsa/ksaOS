@@ -130,7 +130,6 @@ class Wechat {
         $sign = implode('&',$sign);
         $dt['sign'] = $ismd5 ? md5($sign) : sha1($sign);
         unset($dt['jsapi_ticket']);
-        $dt['appid'] = APP::setting('WECHAT/APPID');
         return $dt;
     }
 

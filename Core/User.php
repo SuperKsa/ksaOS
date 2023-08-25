@@ -166,6 +166,18 @@ class User{
 		}
 		return false;
 	}
+    
+    /**
+     * 解码token
+     * @param $token
+     * @param $ck
+     *
+     * @return string
+     */
+    static function tokenDecode($token='', $ck=''){
+        $ck .= ENCODEKEY;
+		return KsaCode::decode($token, $ck);
+    }
 	
 	/**
 	 * 校验用户token是否有效
@@ -173,13 +185,15 @@ class User{
 	 * @param string $ck 混淆密钥（可选）
 	 * @return boolean|array 成功返回用户数据且附带token字段 否则false
 	 */
-	static function checkToken($token='', $ck=''){
-		$decodetoken = base('DECODE',$token);
-		list($uid,$password) = explode('_', $decodetoken);
+	static function checkToken($token='', $ck='', $user=[]){
+        
+        $decodetoken = self::tokenDecode($token, $ck);
+        
+		[$uid,$password] = explode('_', $decodetoken);
 		$uid = intval($uid);
 		if($uid && $password){
-			$user = DB('user')->where('uid',$uid)->fetch_first();
-			$pw = self::__tokenPW($user, $ck);
+            $user = DB('user')->where('uid',$uid)->fetch_first();
+			$pw = self::pwHash($user, $ck);
 			if($password == $pw){
 				unset($user['salt'],$user['password']);
 				$user['token'] = $token;
@@ -196,9 +210,10 @@ class User{
 	 * @return string token
 	 */
 	static function getToken($user=[], $ck=''){
-		$token = self::__tokenPW($user, $ck);
+		$token = self::pwHash($user, $ck);
 		if($token){
-			$token = base('ENCODE', $user['uid'].'_'.$token);
+            $ck .= ENCODEKEY;
+			$token = KsaCode::encode($user['uid'].'_'.$token, $ck);
 		}
 		return $token;
 	}
@@ -209,10 +224,11 @@ class User{
 	 * @param string $ck 混淆密钥（可选）
 	 * @return string 成功返回加密后的密码
 	 */
-	static function __tokenPW($user=[], $ck=''){
+	static function pwHash($user=[], $ck=''){
+        $ck .= ENCODEKEY;
 		$pw = '';
 		if(is_array($user) && isset($user['uid']) && $user['password'] && $user['salt']){
-			$pw = md5(ENCODEKEY.md5($user['uid'].$user['password']).$user['password'].$user['salt']);
+			$pw = md5($ck.md5($user['uid'].$user['password']).$user['password'].$user['salt']);
 		}
 		return $pw;
 	}

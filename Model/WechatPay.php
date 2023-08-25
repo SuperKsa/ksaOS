@@ -273,10 +273,10 @@ class WechatPay {
             $data = $data['data'];
             $data && Cache($cacheKey, $data, 3600);
         }
-        $wechatPaySetting = APP::setting('WECHAT_APP_PAY');
+        
         //自动解密证书
         foreach($data as $key => $value){
-            $value['encrypt_certificate']['ciphertext'] = Aes256::decode($value['encrypt_certificate']['ciphertext'], $value['encrypt_certificate']['associated_data'], $value['encrypt_certificate']['nonce'], $wechatPaySetting['APIKEY']);
+            $value['encrypt_certificate']['ciphertext'] = Aes256::decode($value['encrypt_certificate']['ciphertext'], $value['encrypt_certificate']['associated_data'], $value['encrypt_certificate']['nonce'], $paysetting['APIKEY3']);
             $data[$key] = $value;
         }
         return $data;
@@ -483,6 +483,26 @@ class WechatPay {
             $sign = strtoupper($sign);
         }
         return $sign;
+    }
+    
+    static function jsApiSign($appID, $prepay_id, $privateKey){
+        $privateKey = openssl_get_privatekey($privateKey);
+        
+        if (!$privateKey) {
+            return false;
+        }
+        $data = [
+            'appId' => $appID,
+            'timeStamp' => time(),
+            'nonceStr' => rands(32),
+            'package' => 'prepay_id='.$prepay_id,
+        ];
+        $sign = implode("\n", $data)."\n";
+        openssl_sign($sign, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+        openssl_free_key($privateKey);
+        $data['signType'] = 'RSA';
+        $data['paySign'] = base64_encode($signature);
+        return $data;
     }
 
     /**
