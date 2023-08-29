@@ -210,7 +210,7 @@ class Files{
 	 * @return array 是图片则输出数据 否则为空数组
 	 */
 	public static function picInfo($src=''){
-		$Mimes = ['image/png','image/x-png','image/jpg','image/jpe','image/jpeg','image/pjpeg','image/gif','image/webp','image/*'];
+		$Mimes = ['image/png','image/x-png','image/jpg','image/jpe','image/jpeg','image/pjpeg','image/gif','image/webp','image/bmp','image/*'];
 		if(is_file($src)){
 			$info = (array)getimagesize($src);
 			if($info[0]>0 && $info[1]>0 && in_array($info['mime'],$Mimes)){
