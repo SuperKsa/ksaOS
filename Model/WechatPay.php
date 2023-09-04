@@ -52,7 +52,7 @@ class WechatPay {
         ];
         $post = array_merges($post, $option);
         $post = json_encode($post);
-        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $paysetting = APP::setting('WECHAT_PAY');
         $api = self::$WECHAT_API_JSAPI;
         $sign = self::authorizationV3('POST', $api, $post, $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, $post, [
@@ -178,7 +178,7 @@ class WechatPay {
      * @return array
      */
     static function authorizationV3($method='', $api ='', $post=NULL, $MCHID = '', $SERIALNO='', $certificate='', $privateKey=''){
-        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $paysetting = APP::setting('WECHAT_PAY');
         $MCHID = $MCHID ? $MCHID : $paysetting['MCHID'];
         $SERIALNO = $SERIALNO ? $SERIALNO : $paysetting['SERIALNO'];
         $certificate = $certificate ? $certificate : $paysetting['CERTIFICATE'];
@@ -259,7 +259,7 @@ class WechatPay {
      * 60分钟自动抓取一次
      */
     static function certificates(){
-        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $paysetting = APP::setting('WECHAT_PAY');
         $cacheKey = 'WechatPaycertificates_'.$paysetting['MCHID'];
         if(!($data = Cache($cacheKey))){
             $Authorization = self::authorizationV3('GET', self::$CERTIFICATES_API,'', $paysetting['MCHID'], $paysetting['SERIALNO']);
@@ -312,7 +312,7 @@ class WechatPay {
 
         $post = array_merges($payData, $option);
         $post = json_encode($post);
-        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $paysetting = APP::setting('WECHAT_PAY');
         $api = self::$WECHAT_API_APP;
         $sign = self::authorizationV3('POST', $api, $post, $paysetting['MCHID'], $paysetting['SERIALNO'], $paysetting['CERTIFICATE'], $paysetting['PRIVATEKEY']);
         $send = Curls::send(self::$WECHAT_API.$api, $post, [
@@ -388,7 +388,7 @@ class WechatPay {
                 'notify_url' => $notify_url,
                 'trade_type' => $trade_type, //自动判断 MWEB=H5支付 JSAPI=JSAPI支付  NATIVE=Native支付 APP=APP支付
             ];
-            $paysetting = APP::setting('WECHAT_APP_PAY');
+            $paysetting = APP::setting('WECHAT_PAY');
             $post['sign'] = self::sign($post, $paysetting['APIKEY']);
 
             $returnData['createData']['sign']['sign'] = $post['sign'];
@@ -423,7 +423,48 @@ class WechatPay {
 
         return $returnData;
     }
-
+    
+    /**
+     * 微信支付V3 支付订单号查询
+     * -
+     * 新版兼容
+     * @param $PayCode
+     * @param $transaction_id
+     * @param $MCHID
+     * @param $SERIALNO
+     *
+     * @return array
+     */
+    public static function V3_query($PayCode='', $transaction_id ='', $MCHID='', $SERIALNO=''){
+        $api = self::$WECHAT_API_QUERY.$transaction_id.'?mchid='.$MCHID;
+        $sign = self::authorizationV3('GET', $api, '', $MCHID, $SERIALNO);
+        $send = Curls::send(self::$WECHAT_API.$api, '', [
+            'User-Agent' => Rest::useragent(),
+            'Content-Type' => 'application/json',
+            'Authorization' => $sign['Authorization']
+        ]);
+        $data = json_decode($send['data'], true);
+        $returnData = [
+            'success' => 0,
+            'msg' => '创建查询',
+            //'sign' => $sign,
+            'orgData' => $data, //原始数据
+            'total' => 0, //查询的支付金额
+            'PayStatus' => 0, //订单付款状态 0=等待付款 1=付款成功
+        ];
+        if($data){
+            if(strtolower($data['trade_state']) == 'success' && $data['mchid'] == $MCHID && $data['out_trade_no'] == $PayCode){
+                $returnData = array_merge($returnData, $data);
+                $returnData['success'] = 1;
+                $returnData['PayStatus'] = 1; //付款成功
+                $returnData['orderCode'] = $PayCode; //成功的同时必须返回传入的$PayCode
+                $returnData['total'] = $data['amount']['total']; //订单总金额(分)
+                $returnData['payer_total'] = $data['amount']['payer_total']; //用户实际支付金额(分)。（指使用优惠券的情况下，这里等于总金额-优惠券金额）
+            }
+            $returnData['msg'] = $data['trade_state_desc'];
+        }
+        return $returnData;
+    }
 
     /**
      * 订单状态查询接口
@@ -432,7 +473,7 @@ class WechatPay {
      * @return array|mixed
      */
     public static function query($PayCode='', $transaction_id =''){
-        $paysetting = APP::setting('WECHAT_APP_PAY');
+        $paysetting = APP::setting('WECHAT_PAY');
         $api = self::$WECHAT_API_QUERY.$transaction_id.'?mchid='.$paysetting['MCHID'];
         $sign = self::authorizationV3('GET', $api, '', $paysetting['MCHID'], $paysetting['SERIALNO']);
         $send = Curls::send(self::$WECHAT_API.$api, '', [
@@ -449,12 +490,12 @@ class WechatPay {
             'PayStatus' => 0, //订单付款状态 0=等待付款 1=付款成功
         ];
         if($data){
-            if(strtolower($data['trade_state']) == 'success' && $data['mch_id'] == $paysetting['MCHID'] && $data['out_trade_no'] == $PayCode){
-                $returnData = $data;
+            if(strtolower($data['trade_state']) == 'success' && $data['mchid'] == $paysetting['MCHID'] && $data['out_trade_no'] == $PayCode){
+                $returnData = array_merge($returnData, $data);
                 $returnData['success'] = 1;
                 $returnData['PayStatus'] = 1; //付款成功
                 $returnData['orderCode'] = $PayCode; //成功的同时必须返回传入的$PayCode
-                $returnData['total'] = floatval($data['total_fee']) /100; //微信的金额为分 需要转为元
+                $returnData['total'] = $data['total_fee']; //微信的金额为分 需要转为元
             }
             $returnData['msg'] = $data['trade_state_desc'];
         }
@@ -530,7 +571,7 @@ class WechatPay {
             $data = simplexml_load_string($data, 'SimpleXMLElement', LIBXML_NOCDATA);
             $data = json_decode(json_encode($data),true);
             file_put_contents(ROOT.'./data/wechatpay.txt', json_encode($data));
-            $settingPay = APP::setting('WECHAT_APP_PAY');
+            $settingPay = APP::setting('WECHAT_PAY');
             //微信主动POST数据检查 开发者ID 商户ID 必须对应 并且有返回支付订单号
             if($data['mch_id'] == $settingPay['MCHID'] && $data['out_trade_no']){
                 $orderData = DB('user_payorders')->orderCode($data['out_trade_no']);

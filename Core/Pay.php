@@ -199,8 +199,9 @@ class Pay{
 
                 //微信统一下单
                 if($PayType == 'WechatAPP'){
-                    $WechatAPPSetting = APP::setting('WECHAT_APP_PAY');
-                    $payDt = WechatPay::UnifiedOrder($WechatAPPSetting['APPID'], $WechatAPPSetting['MCHID'], $Total, $Title, $PayData['PayCode'], $callbackUrl);
+                    $wechatPay = APP::setting('WECHAT_PAY');
+                    $wechatOpen = APP::setting('WECHAT_OPEN');
+                    $payDt = WechatPay::UnifiedOrder($wechatOpen['AppID'], $wechatPay['MCHID'], $Total, $Title, $PayData['PayCode'], $callbackUrl);
                     //下单成功
                     if($payDt['success']){
                         $PayData['payCreateData'] = $payDt['createData'];
