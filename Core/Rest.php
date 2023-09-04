@@ -410,7 +410,7 @@ class Rest{
      * ' key > newkey'
      * @return array
      */
-    function where($rule = array()){
+    static function where($rule = array()){
         $dt = self::data();
         $param = func_get_args();
         $where = [];
