@@ -108,7 +108,34 @@ class User{
 		}
 		return true;
 	}
-
+    
+    /**
+     * 根据user数据将其设为当前登录用户
+     * @param $user
+     *
+     * @return array
+     */
+    static function LoginUser($user){
+        global $C;
+        if($user && $user['uid'] && $C['uid'] != $user['uid']) {
+            $token = self::getToken($user);
+            if($C['token'] != $token){
+                cookies('token', $token, 86400 * 15);
+                unset($user['salt'], $user['password']);
+                $user['token'] = $token;
+                $C['user'] = $user;
+                $C['uid'] = $user['uid'];
+                $C['token'] = $token;
+                if($user['groupid']){
+                    $C['usergroup'] = DB('user_group')->where('groupid', $user['groupid'])->fetch_first();
+                }else{
+                    $C['usergroup'] = DB('user_group')->where('groupid', 10)->fetch_first();
+                }
+                DB('user_status')->where('uid', $user['uid'])->update(['loginIP' => $C['IP'], 'loginPort' => $C['port'], 'loginDate' => time(), 'lastIP' => $C['IP'], 'lastPort' => $C['port'], 'lastDate' => time()]);
+            }
+        }
+        return $user;
+    }
 	
 	/**
 	 * 用户登录(登录成功，写cookie：token并返回token串)
@@ -116,7 +143,7 @@ class User{
 	 * @param array $user 用户原始信息
 	 * @param string $account 登录帐号 (微信登录 值固定为WECHAT)
 	 * @param string $password 用户提交的明文密码(微信登录 值=WXopenid字段值)
-	 * @return string/boolean 成功返回user数据且附带token字段 否则=false
+	 * @return boolean|array 成功返回user数据且附带token字段 否则=false
 	 */
 	static function Login($user=[], $account='', $password=''){
 		global $C;
@@ -134,15 +161,7 @@ class User{
             }
 
 			if($PWstatus){
-				$token = self::getToken($user);
-				cookies('token',$token,86400 * 15);
-				unset($user['salt'],$user['password']);
-				$user['token'] = $token;
-				$C['user'] = $user;
-				$C['uid'] = $user['uid'];
-				$C['token'] = $token;
-				DB('user_status')->where('uid',$user['uid'])->update(['loginIP'=>$C['IP'],'loginPort'=>$C['port'],'loginDate'=>time(),'lastIP'=>$C['IP'],'lastPort'=>$C['port'],'lastDate'=>time()]);
-				return $user;
+                return self::LoginUser($user);
 			}
 		}
 		return false;
