@@ -296,7 +296,36 @@ function cookies($key='',$value=NULL,$timesout=0, $httponly = false) {
 		$key = COOKIEPRE.$key;
 		$_COOKIE[$key] = $value;
 		$timesout = $timesout > 0 ? time() + $timesout : ($timesout < 0 ? time() - (86400 *15) : 0);
-		return setcookie($key, $value, $timesout, (COOKIEPATH ? COOKIEPATH : './'), COOKIEDOMAIN, $C['HTTPS'] ? 1 : 0, $httponly);
+        $samesite = 'None';
+        if(version_compare(PHP_VERSION, '7.3.0', '>=')){
+            setcookie($key, $value,[
+                'expires'=>$timesout,
+                'path'=> (COOKIEPATH ? COOKIEPATH : './'),
+                'domain'=> COOKIEDOMAIN,
+                'secure'=> $C['HTTPS'] ? 1 : 0,
+                'httponly'=> $httponly,
+                'samesite'=> $samesite,
+            ]);
+        }else{
+            $header = 'Set-Cookie:';
+            $header .= rawurlencode($key) . '=' . rawurlencode($value) . ';';
+            $header .= 'expires=' . gmdate('D, d-M-Y H:i:s T', $timesout) . ';';
+            $header .= 'Max-Age=' . max(0, (int) ($timesout - time())) . ';';
+            $header .= 'path=' . (COOKIEPATH ? COOKIEPATH : './'). ';';
+            if (COOKIEDOMAIN) {
+                $header .= 'domain=' . rawurlencode(COOKIEDOMAIN) . ';';
+            }
+            $header .= 'Secure;';
+            if ($httponly) {
+                $header .= 'HttpOnly;';
+            }
+            if ($samesite) {
+                $header .= 'SameSite=' . rawurlencode($samesite);
+            }
+            header($header, false);
+            $_COOKIE[$key] = $value;
+        }
+		return true;
 	}
 }
 
