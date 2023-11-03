@@ -24,7 +24,7 @@ require_once KSAOS.'/Extend/Workerman/Autoloader.php';
 class Biger{
 	const _name = 'KSAOS框架';
 	protected $name = '';
-	protected $debug = 1; //是否开启日志输出
+	protected $debug = 0; //是否开启日志输出
 
 	protected $socket = '';
 	protected $id = NULL;
