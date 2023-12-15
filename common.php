@@ -820,7 +820,7 @@ function  Uuid(){
 function UniCode24($cacheKey='__KSAOS_UniCode24__'){
     $str = intval(date('Y')) - 2020; //第一组 1-2位 年差值
     $str .= date('mdHis'); //第二组 4位 月日
-    list($ms, $sec) = explode(' ', microtime());
+    [$ms, $sec] = explode(' ', microtime());
     //毫秒控制6位
     $ms = str_pad(substr($ms, 2, 6), 6, '0', STR_PAD_RIGHT); //右侧补0
     $str .= $sec; //累加10位时间戳
@@ -835,4 +835,31 @@ function UniCode24($cacheKey='__KSAOS_UniCode24__'){
     $str .= $auto;
     $str .= mt_rand(100000, 999999); //补充6位随机码 最终达到至少24位
     return $str;
+}
+/**
+ * 导出数据并下载
+ * @param $data array 数据数组
+ * @param $filename string 保存文件名
+ *
+ * @return void
+ */
+function exportdata($data=[], $filename=''){
+    $filename .= '.csv';
+    // 设置HTTP头，告诉浏览器输出CSV格式的文件
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    // 打开PHP输出流，将数据写入文件句柄
+    $output = fopen('php://output', 'w');
+
+    // 写入数据
+    foreach ($data as $row) {
+        fputcsv($output, $row);
+    }
+
+    // 关闭文件句柄
+    fclose($output);
+
+    // 停止脚本执行
+    exit;
 }
